@@ -8,10 +8,11 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-private const val TAG         = "AVRClient"
-private const val POLL_FAST_MS = 400L
-private const val POLL_FULL_N  = 12
-private const val TIMEOUT_MS   = 2500
+private const val TAG            = "AVRClient"
+private const val POLL_NORMAL_MS = 400L   // Normal polling
+private const val POLL_TURBO_MS  = 150L   // Fast polling during volume changes
+private const val TIMEOUT_MS     = 2500
+private const val TURBO_DURATION = 20     // Stay in turbo mode for N polls (~3 seconds)
 
 class AVRClient(
     private val host: String,
@@ -23,6 +24,7 @@ class AVRClient(
     private var thread: Thread? = null
     private var current = AVRState()
     private var firstConnect = true
+    private var turboCountdown = 0  // Countdown for turbo mode
 
     fun start() {
         running = true
@@ -34,20 +36,13 @@ class AVRClient(
     fun stop() { running = false; thread?.interrupt() }
 
     private fun pollLoop() {
-        var tick = 0
-        var cachedFull: Map<String, String> = emptyMap()
-
         while (running) {
             try {
-                val lite = fetchXml("/goform/formMainZone_MainZoneXmlStatusLite.xml")
-                if (tick % POLL_FULL_N == 0) {
-                    cachedFull = fetchXml("/goform/formMainZone_MainZoneXml.xml")
-                }
-                tick++
-                val merged = cachedFull + lite
+                // Only fetch lite XML (power/volume/mute)
+                val fields = fetchXml("/goform/formMainZone_MainZoneXmlStatusLite.xml")
                 mainHandler.post {
                     onConnected(true)
-                    applyFields(merged)
+                    applyFields(fields)
                 }
             } catch (e: InterruptedException) {
                 break
@@ -56,7 +51,15 @@ class AVRClient(
                 mainHandler.post { onConnected(false) }
                 sleepSafe(3000)
             }
-            sleepSafe(POLL_FAST_MS)
+
+            // Adaptive polling: faster during volume changes
+            val pollInterval = if (turboCountdown > 0) {
+                turboCountdown--
+                POLL_TURBO_MS
+            } else {
+                POLL_NORMAL_MS
+            }
+            sleepSafe(pollInterval)
         }
     }
 
@@ -84,39 +87,35 @@ class AVRClient(
         val old = current
         var next = old
 
-        f["Power"]?.let           { next = next.copy(power     = it.equals("ON", true)) }
+        // Parse only volume-relevant fields
+        f["Power"]?.let { next = next.copy(power = it.equals("ON", true)) }
         f["MasterVolume"]?.takeIf { it != "--" }?.toDoubleOrNull()
-                                  ?.let { next = next.copy(volumeDb  = it) }
-        f["Mute"]?.let            { next = next.copy(muted     = it.equals("ON", true)) }
-        f["InputFuncSelect"]?.let { next = next.copy(source    = it.trim()) }
-        f["selectSurround"]?.let  { next = next.copy(soundMode = it.trim()) }
-        f["ECOMode"]?.let         { next = next.copy(ecoMode   = it.trim()) }
-        f["MultEQMode"]?.let      { next = next.copy(multEQ    = it.trim()) }
-        f["DynamicEQ"]?.let       { next = next.copy(dynEQ     = it.trim()) }
-        f["DynamicVolume"]?.let   { next = next.copy(dynVol    = it.trim()) }
+            ?.let { next = next.copy(volumeDb = it) }
+        f["Mute"]?.let { next = next.copy(muted = it.equals("ON", true)) }
 
         current = next
 
-        // On first successful poll: always show full state regardless of changes
+        // On first successful poll: show volume if powered on
         if (firstConnect) {
             firstConnect = false
-            Log.d(TAG, "First connect – forcing display: power=${next.power} vol=${next.volumeDb} src=${next.source}")
-            if (next.power) onUpdate(next, OSDTrigger.POWER_ON)
+            Log.d(TAG, "First connect: power=${next.power} vol=${next.volumeDb}")
+            if (next.power) onUpdate(next, OSDTrigger.VOLUME)
             return
         }
 
         if (next == old) return
 
+        // Only volume and mute trigger OSD
         val trigger = when {
-            !old.power && next.power                       -> OSDTrigger.POWER_ON
-            old.muted     != next.muted                    -> OSDTrigger.MUTE
+            !old.power && next.power                       -> OSDTrigger.VOLUME
+            old.muted != next.muted                        -> OSDTrigger.MUTE
             Math.abs(old.volumeDb - next.volumeDb) > 0.1   -> OSDTrigger.VOLUME
-            old.source    != next.source                   -> OSDTrigger.SOURCE
-            old.soundMode != next.soundMode                -> OSDTrigger.SOUND_MODE
-            old.ecoMode   != next.ecoMode                  -> OSDTrigger.ECO
-            else                                           -> OSDTrigger.SOUND_MODE
+            else                                           -> return  // No relevant change
         }
 
-        if (next.power || trigger == OSDTrigger.POWER_ON) onUpdate(next, trigger)
+        // Enable turbo mode for all volume/mute changes
+        turboCountdown = TURBO_DURATION
+
+        if (next.power) onUpdate(next, trigger)
     }
 }

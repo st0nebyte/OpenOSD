@@ -51,10 +51,8 @@ class OSDService : Service() {
     private fun onUpdate(state: AVRState, trigger: OSDTrigger) {
         Log.d(TAG, "onUpdate trigger=$trigger power=${state.power} vol=${state.volumeDb}")
         if (!state.power) { hide(); return }
-        osd.state    = state
-        osd.showFull = trigger.showFull
+        osd.state = state
         osd.animateVolume(state.volumeNorm)
-        if (attached) runCatching { wm.updateViewLayout(osd, makeParams(trigger.showFull)) }
         show(trigger.timeoutMs)
     }
 
@@ -65,7 +63,7 @@ class OSDService : Service() {
     private fun show(timeoutMs: Long) {
         if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
         if (!attached) {
-            try { wm.addView(osd, makeParams(osd.showFull)); attached = true }
+            try { wm.addView(osd, makeParams()); attached = true }
             catch (e: Exception) { Log.e(TAG, "addView: ${e.message}"); return }
         }
         osd.visibility = View.VISIBLE
@@ -90,11 +88,11 @@ class OSDService : Service() {
         if (attached) { runCatching { wm.removeView(osd) }; attached = false }
     }
 
-    private fun makeParams(full: Boolean): WindowManager.LayoutParams {
+    private fun makeParams(): WindowManager.LayoutParams {
         val d = resources.displayMetrics.density
         return WindowManager.LayoutParams(
-            (340f * d).toInt(),
-            (if (full) 330f else 52f).times(d).toInt(),
+            (240f * d).toInt(),  // Tighter width: 240dp instead of 340dp
+            (40f * d).toInt(),   // Compact height: 40dp
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -106,8 +104,8 @@ class OSDService : Service() {
                     or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.START
-            x = (80 * d).toInt(); y = (80 * d).toInt()
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL  // Centered at bottom
+            y = (60 * d).toInt()  // 60dp from bottom
         }
     }
 
