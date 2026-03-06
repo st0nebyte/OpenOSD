@@ -41,7 +41,16 @@ class OSDService : Service() {
         toast("Verbinde mit $host…")
         prefs().edit().putString(KEY_HOST, host).apply()
         client?.stop()
+
+        // Choose client implementation:
+        // - AVRClient: HTTP polling (compatible, works everywhere)
+        // - AVRClientTelnet: Push updates via Telnet Port 23 (instant, 0ms lag)
+        //   Requires: Port 23 unlocked (hardware reset on X-series)
+        //   See TELNET.md for setup instructions
         client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
+        // Uncomment to use Telnet (after Port 23 is unlocked):
+        // client = AVRClientTelnet(host, ::onUpdate, ::onConnected).also { it.start() }
+
         return START_STICKY
     }
 
