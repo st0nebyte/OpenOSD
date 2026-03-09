@@ -23,14 +23,31 @@ class OSDService : Service() {
     private var attached = false
 
     private val handler    = Handler(Looper.getMainLooper())
-    private var client:    AVRClient? = null
+    private var client:    IAVRClient? = null
     private var hideTimer: Runnable?  = null
 
     override fun onCreate() {
         super.onCreate()
         wm  = getSystemService(WINDOW_SERVICE) as WindowManager
         osd = OSDView(this)
+        updateDisplayMode()
         createChannel()
+    }
+
+    private fun updateDisplayMode() {
+        val modeName = prefs().getString(KEY_DISPLAY_MODE, "STANDARD") ?: "STANDARD"
+        osd.displayMode = try {
+            OSDDisplayMode.valueOf(modeName)
+        } catch (e: Exception) {
+            OSDDisplayMode.STANDARD
+        }
+
+        val scaleName = prefs().getString(KEY_SCALE, "MEDIUM") ?: "MEDIUM"
+        osd.scale = try {
+            OSDScale.valueOf(scaleName)
+        } catch (e: Exception) {
+            OSDScale.MEDIUM
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -47,9 +64,11 @@ class OSDService : Service() {
         // - AVRClientTelnet: Push updates via Telnet Port 23 (instant, 0ms lag)
         //   Requires: Port 23 unlocked (hardware reset on X-series)
         //   See TELNET.md for setup instructions
-        client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
-        // Uncomment to use Telnet (after Port 23 is unlocked):
-        // client = AVRClientTelnet(host, ::onUpdate, ::onConnected).also { it.start() }
+
+        // Using Telnet for instant push updates
+        client = AVRClientTelnet(host, ::onUpdate, ::onConnected).also { it.start() }
+        // HTTP polling fallback:
+        // client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
 
         return START_STICKY
     }
@@ -71,9 +90,14 @@ class OSDService : Service() {
 
     private fun show(timeoutMs: Long) {
         if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
+        updateDisplayMode()  // Refresh display mode in case settings changed
         if (!attached) {
             try { wm.addView(osd, makeParams()); attached = true }
             catch (e: Exception) { Log.e(TAG, "addView: ${e.message}"); return }
+        } else {
+            // Update layout params if already attached (display mode might have changed)
+            try { wm.updateViewLayout(osd, makeParams()) }
+            catch (e: Exception) { Log.e(TAG, "updateViewLayout: ${e.message}") }
         }
         osd.visibility = View.VISIBLE
         osd.alpha = 1f
@@ -99,9 +123,26 @@ class OSDService : Service() {
 
     private fun makeParams(): WindowManager.LayoutParams {
         val d = resources.displayMetrics.density
+
+        // Scale multiplier based on user preference
+        val scaleFactor = when (osd.scale) {
+            OSDScale.SMALL  -> 0.75f
+            OSDScale.MEDIUM -> 1.0f
+            OSDScale.LARGE  -> 1.3f
+        }
+
+        // Base dimensions adjusted for display mode
+        val baseHeight = when (osd.displayMode) {
+            OSDDisplayMode.STANDARD -> 40f   // Compact: 40dp
+            OSDDisplayMode.INFO -> 60f       // Taller: 60dp for 2 lines
+            OSDDisplayMode.EXTENDED -> 80f   // Tallest: 80dp for 3 lines
+        }
+
+        val baseWidth = 240f  // Base width: 240dp
+
         return WindowManager.LayoutParams(
-            (240f * d).toInt(),  // Tighter width: 240dp instead of 340dp
-            (40f * d).toInt(),   // Compact height: 40dp
+            (baseWidth * d * scaleFactor).toInt(),
+            (baseHeight * d * scaleFactor).toInt(),
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -145,6 +186,8 @@ class OSDService : Service() {
 
     companion object {
         const val KEY_HOST = "avr_host"
+        const val KEY_DISPLAY_MODE = "osd_display_mode"
+        const val KEY_SCALE = "osd_scale"
         fun start(ctx: Context, host: String) {
             ctx.getSharedPreferences("openosd_prefs", Context.MODE_PRIVATE)
                 .edit().putString(KEY_HOST, host).apply()

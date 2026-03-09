@@ -12,9 +12,9 @@ import java.net.SocketTimeoutException
 
 private const val TAG = "AVRClientTelnet"
 private const val DENON_PORT = 23
-private const val CONNECT_TIMEOUT_MS = 5000
+private const val CONNECT_TIMEOUT_MS = 2000  // Reduced to avoid ANR
 private const val READ_TIMEOUT_MS = 0  // No timeout for push updates
-private const val RECONNECT_DELAY_MS = 5000L
+private const val RECONNECT_DELAY_MS = 3000L  // Faster reconnect
 
 /**
  * Telnet-based AVR client with push updates (instant, 0ms lag).
@@ -40,7 +40,7 @@ class AVRClientTelnet(
     private val host: String,
     private val onUpdate: (AVRState, OSDTrigger) -> Unit,
     private val onConnected: (Boolean) -> Unit,
-) {
+) : IAVRClient {
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var running = false
     @Volatile private var connected = false
@@ -49,8 +49,9 @@ class AVRClientTelnet(
     private var socket: Socket? = null
     private var writer: OutputStreamWriter? = null
     private var reader: BufferedReader? = null
+    private val activeSpeakers = mutableListOf<String>()
 
-    fun start() {
+    override fun start() {
         running = true
         thread = Thread({ connectionLoop() }, "AVRTelnet").also {
             it.isDaemon = true
@@ -58,10 +59,14 @@ class AVRClientTelnet(
         }
     }
 
-    fun stop() {
+    override fun stop() {
         running = false
-        closeConnection()
         thread?.interrupt()
+        // Close connection async to avoid blocking caller
+        Thread {
+            Thread.sleep(100)  // Let thread exit first
+            closeConnection()
+        }.start()
     }
 
     private fun connectionLoop() {
@@ -125,6 +130,11 @@ class AVRClientTelnet(
         sendCommand("PW?")   // Power
         sendCommand("MV?")   // Master Volume
         sendCommand("MU?")   // Mute
+        sendCommand("SI?")   // Input Source
+        sendCommand("MS?")   // Sound Mode
+        sendCommand("SD?")   // Signal Detection (HDMI/DIGITAL/ANALOG)
+        sendCommand("DC?")   // Digital Mode (AUTO/PCM/DTS)
+        sendCommand("CV?")   // Channel Volume (returns active speakers)
     }
 
     private fun readLoop() {
@@ -155,14 +165,20 @@ class AVRClientTelnet(
                 next = next.copy(power = powered)
             }
 
-            // Volume: MV50, MV355 (35.5), MVMAX (98)
+            // Volume: MV27 = 27, MV275 = 27.5, MVMAX ignored
             response.startsWith("MV") && !response.startsWith("MVMAX") -> {
                 val volStr = response.substring(2).trim()
                 val volRaw = volStr.toIntOrNull() ?: return
 
-                // Convert Denon format to dB
-                // Denon sends: 0-98 as volume values (corresponds to -80dB to +18dB)
-                val volumeDb = volRaw - 80.0
+                // Denon format: 2 digits (27 = 27) or 3 digits (275 = 27.5)
+                val volumeActual = if (volStr.length == 3) {
+                    volRaw / 10.0  // 3-digit: 275 → 27.5
+                } else {
+                    volRaw.toDouble()  // 2-digit: 27 → 27.0
+                }
+
+                // Convert to dB: range is -80 to +18 (relative 0-98 maps to this)
+                val volumeDb = volumeActual - 80.0
                 next = next.copy(volumeDb = volumeDb)
             }
 
@@ -170,6 +186,53 @@ class AVRClientTelnet(
             response.startsWith("MU") -> {
                 val muted = response == "MUON"
                 next = next.copy(muted = muted)
+            }
+
+            // Input Source: SIGAME, SIDVD, SITV, etc.
+            response.startsWith("SI") -> {
+                val source = response.substring(2).trim()
+                    .replace("SAT/CBL", "SAT")  // Shorten for display
+                    .replace("BD", "BLU-RAY")
+                next = next.copy(inputSource = source)
+            }
+
+            // Sound Mode: MSSTEREO, MSDIRECT, MSDOLBY SURROUND, etc.
+            response.startsWith("MS") -> {
+                val mode = response.substring(2).trim()
+                    .replace("DOLBY DIGITAL", "DD")
+                    .replace("DOLBY SURROUND", "SURROUND")
+                    .replace("DTS SURROUND", "DTS")
+                next = next.copy(soundMode = mode)
+            }
+
+            // Signal Detection: SDHDMI, SDDIGITAL, SDANALOG, SDARC, SDNO
+            response.startsWith("SD") -> {
+                val signal = response.substring(2).trim()
+                    .replace("NO", "—")  // No signal
+                next = next.copy(signalDetect = signal)
+            }
+
+            // Digital Mode: DCAUTO, DCPCM, DCDTS
+            response.startsWith("DC") -> {
+                val digital = response.substring(2).trim()
+                next = next.copy(digitalMode = digital)
+            }
+
+            // Channel Volume: CV** responses until CVEND
+            response.startsWith("CV") -> {
+                when {
+                    response == "CVEND" -> {
+                        // End of CV list - update state with collected speakers
+                        next = next.copy(speakers = activeSpeakers.toList())
+                        activeSpeakers.clear()
+                    }
+                    response.matches(Regex("^CV[A-Z]{1,3} \\d+$")) -> {
+                        // CV response: CVFL 50, CVFR 50, etc.
+                        val speaker = response.substring(2).split(" ")[0]
+                        activeSpeakers.add(speaker)
+                    }
+                }
+                return  // Don't trigger update yet for CV responses
             }
 
             else -> return  // Ignore unknown responses

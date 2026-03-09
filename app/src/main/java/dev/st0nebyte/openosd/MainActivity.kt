@@ -19,8 +19,10 @@ import android.widget.*
 
 class MainActivity : Activity() {
 
-    private lateinit var etHost:   EditText
-    private lateinit var tvStatus: TextView
+    private lateinit var etHost:        EditText
+    private lateinit var spDisplayMode: Spinner
+    private lateinit var spScale:       Spinner
+    private lateinit var tvStatus:      TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,6 +67,68 @@ class MainActivity : Activity() {
             }
         }
         root.addView(etHost, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+
+        root.addView(space(16))
+
+        root.addView(TextView(this).apply {
+            text = "OSD Anzeigemodus"; textSize = 12f; typeface = Typeface.MONOSPACE
+            setTextColor(Color.parseColor("#557788"))
+            setPadding(0, 0, 0, dp(6))
+        })
+
+        spDisplayMode = Spinner(this).apply {
+            val modes = arrayOf("Standard (nur Lautstärke)", "Info (mit Sound Mode + Input)", "Extended (mit Signal + Lautsprecher)")
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, modes).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setBackgroundColor(Color.parseColor("#0C1820"))
+            setPadding(dp(12), dp(14), dp(12), dp(14))
+
+            // Load saved preference
+            val savedMode = prefs().getString(OSDService.KEY_DISPLAY_MODE, "STANDARD") ?: "STANDARD"
+            setSelection(OSDDisplayMode.valueOf(savedMode).ordinal)
+
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    val mode = OSDDisplayMode.values()[position]
+                    prefs().edit().putString(OSDService.KEY_DISPLAY_MODE, mode.name).apply()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        }
+        root.addView(spDisplayMode, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+
+        root.addView(space(16))
+
+        root.addView(TextView(this).apply {
+            text = "OSD Skalierung"; textSize = 12f; typeface = Typeface.MONOSPACE
+            setTextColor(Color.parseColor("#557788"))
+            setPadding(0, 0, 0, dp(6))
+        })
+
+        spScale = Spinner(this).apply {
+            val scales = arrayOf("Klein (75%)", "Mittel (100%)", "Groß (130%)")
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, scales).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            }
+            setBackgroundColor(Color.parseColor("#0C1820"))
+            setPadding(dp(12), dp(14), dp(12), dp(14))
+
+            // Load saved preference
+            val savedScale = prefs().getString(OSDService.KEY_SCALE, "MEDIUM") ?: "MEDIUM"
+            setSelection(OSDScale.valueOf(savedScale).ordinal)
+
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    val scale = OSDScale.values()[position]
+                    prefs().edit().putString(OSDService.KEY_SCALE, scale.name).apply()
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        }
+        root.addView(spScale, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
         root.addView(space(16))

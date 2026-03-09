@@ -18,7 +18,7 @@ class AVRClient(
     private val host: String,
     private val onUpdate: (AVRState, OSDTrigger) -> Unit,
     private val onConnected: (Boolean) -> Unit,
-) {
+) : IAVRClient {
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var running = false
     private var thread: Thread? = null
@@ -26,14 +26,14 @@ class AVRClient(
     private var firstConnect = true
     private var turboCountdown = 0  // Countdown for turbo mode
 
-    fun start() {
+    override fun start() {
         running = true
         thread = Thread({ pollLoop() }, "AVRPoll").also {
             it.isDaemon = true; it.start()
         }
     }
 
-    fun stop() { running = false; thread?.interrupt() }
+    override fun stop() { running = false; thread?.interrupt() }
 
     private fun pollLoop() {
         while (running) {
