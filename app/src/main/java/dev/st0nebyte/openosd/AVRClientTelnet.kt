@@ -127,14 +127,18 @@ class AVRClientTelnet(
 
     private fun queryInitialState() {
         // Query current state on connect
-        sendCommand("PW?")   // Power
-        sendCommand("MV?")   // Master Volume
-        sendCommand("MU?")   // Mute
-        sendCommand("SI?")   // Input Source
-        sendCommand("MS?")   // Sound Mode
-        sendCommand("SD?")   // Signal Detection (HDMI/DIGITAL/ANALOG)
-        sendCommand("DC?")   // Digital Mode (AUTO/PCM/DTS)
-        sendCommand("CV?")   // Channel Volume (returns active speakers)
+        sendCommand("PW?")        // Power
+        sendCommand("MV?")        // Master Volume
+        sendCommand("MU?")        // Mute
+        sendCommand("SI?")        // Input Source
+        sendCommand("MS?")        // Sound Mode
+        sendCommand("SD?")        // Signal Detection (HDMI/DIGITAL/ANALOG)
+        sendCommand("DC?")        // Digital Mode (AUTO/PCM/DTS)
+        sendCommand("CV?")        // Channel Volume (returns active speakers)
+        sendCommand("PSDRC ?")    // Dynamic Range Compression
+        sendCommand("PSRSTR ?")   // Audio Restorer
+        sendCommand("VSAUDIO ?")  // HDMI Audio Output
+        sendCommand("ECO?")       // ECO Mode
     }
 
     private fun readLoop() {
@@ -191,17 +195,14 @@ class AVRClientTelnet(
             // Input Source: SIGAME, SIDVD, SITV, etc.
             response.startsWith("SI") -> {
                 val source = response.substring(2).trim()
-                    .replace("SAT/CBL", "SAT")  // Shorten for display
-                    .replace("BD", "BLU-RAY")
+                    .replace("BD", "BLU-RAY")  // BD → BLU-RAY for clarity
                 next = next.copy(inputSource = source)
             }
 
             // Sound Mode: MSSTEREO, MSDIRECT, MSDOLBY SURROUND, etc.
+            // Keep full format names (no abbreviations)
             response.startsWith("MS") -> {
                 val mode = response.substring(2).trim()
-                    .replace("DOLBY DIGITAL", "DD")
-                    .replace("DOLBY SURROUND", "SURROUND")
-                    .replace("DTS SURROUND", "DTS")
                 next = next.copy(soundMode = mode)
             }
 
@@ -233,6 +234,30 @@ class AVRClientTelnet(
                     }
                 }
                 return  // Don't trigger update yet for CV responses
+            }
+
+            // Dynamic Range Compression: PSDRC OFF, PSDRC AUTO, PSDRC LOW, PSDRC MID, PSDRC HI
+            response.startsWith("PSDRC ") -> {
+                val drc = response.substring(6).trim()
+                next = next.copy(drc = drc)
+            }
+
+            // Audio Restorer: PSRSTR OFF, PSRSTR LOW, PSRSTR MED, PSRSTR HI
+            response.startsWith("PSRSTR ") -> {
+                val restorer = response.substring(7).trim()
+                next = next.copy(audioRestorer = restorer)
+            }
+
+            // HDMI Audio Output: VSAUDIO AMP, VSAUDIO TV
+            response.startsWith("VSAUDIO ") -> {
+                val hdmiOut = response.substring(8).trim()
+                next = next.copy(hdmiAudioOut = hdmiOut)
+            }
+
+            // ECO Mode: ECOON, ECOAUTO, ECOOFF
+            response.startsWith("ECO") -> {
+                val eco = response.substring(3).trim()
+                next = next.copy(ecoMode = eco)
             }
 
             else -> return  // Ignore unknown responses

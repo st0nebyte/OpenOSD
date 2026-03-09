@@ -135,7 +135,7 @@ class OSDService : Service() {
         val baseHeight = when (osd.displayMode) {
             OSDDisplayMode.STANDARD -> 40f   // Compact: 40dp
             OSDDisplayMode.INFO -> 60f       // Taller: 60dp for 2 lines
-            OSDDisplayMode.EXTENDED -> 80f   // Tallest: 80dp for 3 lines
+            OSDDisplayMode.EXTENDED -> 120f  // Tallest: 120dp for 3 lines + visual speaker layout
         }
 
         val baseWidth = 240f  // Base width: 240dp

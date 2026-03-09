@@ -8,11 +8,15 @@ data class AVRState(
     val power:         Boolean = false,
     val volumeDb:      Double  = -80.0,  // -80.0 to +18.0 dB
     val muted:         Boolean = false,
-    val soundMode:     String? = null,   // STEREO, DIRECT, DOLBY SURROUND, etc.
+    val soundMode:     String? = null,   // Full format name: DOLBY ATMOS, DTS:X MSTR, etc.
     val inputSource:   String? = null,   // GAME, DVD, TV, SAT/CBL, etc.
     val signalDetect:  String? = null,   // HDMI, DIGITAL, ANALOG, ARC
     val digitalMode:   String? = null,   // AUTO, PCM, DTS
     val speakers:      List<String> = emptyList(),  // Active speakers: FL, FR, C, SW, SL, SR, etc.
+    val drc:           String? = null,   // Dynamic Range Compression: OFF, AUTO, LOW, MID, HI
+    val audioRestorer: String? = null,   // Audio Restorer: OFF, LOW, MED, HI
+    val hdmiAudioOut:  String? = null,   // HDMI Audio Output: AMP, TV
+    val ecoMode:       String? = null,   // ECO mode: OFF, ON, AUTO
 ) {
     /** 0.0 – 1.0 for progress bar; volume range is -80 to +18 dB (raw 0–98) */
     val volumeNorm: Float

@@ -12,8 +12,10 @@ No more looking at the receiver's tiny display — OpenOSD draws a clean, hardwa
 - **Three Display Modes:**
   - **STANDARD:** Minimal volume-only display
   - **INFO:** Volume + input source + sound mode
-  - **EXTENDED:** Complete info with signal type, digital format, and speaker configuration
+  - **EXTENDED:** Complete info with **visual speaker layout**, full audio format names, and technical details
 - **Three Scale Options:** Small (75%), Medium (100%), Large (130%) for minimal screen coverage
+- **Full Audio Format Names:** No abbreviations - shows complete format like "DOLBY ATMOS", "DTS:X MSTR", "DOLBY HD+DS"
+- **Visual Speaker Layout:** Overhead view showing active/inactive speakers in real-time (EXTENDED mode)
 - **Modern Design:** Glassy semi-transparent aesthetic with smooth animations
 - **Consistent Alignment:** Center-bottom positioning regardless of scale
 - **Mute Indicator:** Red text when muted
@@ -21,9 +23,16 @@ No more looking at the receiver's tiny display — OpenOSD draws a clean, hardwa
 ### Technical Features
 - Fully hardware-accelerated Canvas rendering — crisp at 4K/1080p
 - Telnet protocol (port 23) with push updates
+- **Visual speaker layout** with overhead view (active speakers highlighted)
+- **Full audio format names** (DOLBY ATMOS, DTS:X MSTR, DOLBY HD+DS, etc.)
 - Speaker configuration detection (2.0, 2.1, 5.1, 7.1, 5.1.2 Atmos, etc.)
 - Signal detection (HDMI, DIGITAL, ANALOG, ARC)
 - Digital mode tracking (AUTO, PCM, DTS)
+- Advanced audio features:
+  - Dynamic Range Compression (DRC) status
+  - Audio Restorer status
+  - HDMI Audio Output routing (AMP/TV)
+  - ECO mode indicator
 - Works while any other app is running
 - Foreground service with persistent notification
 - No root required
@@ -109,13 +118,25 @@ See [DOCUMENTATION.md](DOCUMENTATION.md) for detailed visual examples and techni
 
 ### EXTENDED Mode
 ```
-┌──────────────────────────┐
-│  VOL ▓▓▓▓▓░░░░░  45     │
-│                          │
-│    GAME • DIRECT         │
-│                          │
-│  HDMI • AUTO • 5.1       │
-└──────────────────────────┘
+┌────────────────────────────────┐
+│  VOL ▓▓▓▓▓░░░░░  45           │
+│                                │
+│  GAME • DOLBY ATMOS            │
+│                                │
+│  HDMI • AUTO • DRC:AUTO        │
+│                                │
+│     TFL      TFR               │
+│                                │
+│   FL   C   FR    ← Visual      │
+│                     Speaker    │
+│   SL   ○   SR       Layout     │
+│                                │
+│       SW                       │
+└────────────────────────────────┘
+
+Active speakers highlighted (○ = listener position)
+Full audio format names (no abbreviations)
+Technical details (DRC, Restorer, HDMI routing, ECO)
 ```
 
 ## How it Works

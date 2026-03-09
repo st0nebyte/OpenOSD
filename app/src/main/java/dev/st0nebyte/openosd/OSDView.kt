@@ -202,7 +202,7 @@ class OSDView(context: Context) : View(context) {
         }
     }
 
-    // ── Volume OSD Extended (source + sound mode + signal + speakers) ──
+    // ── Volume OSD Extended (source + sound mode + signal + visual speaker layout) ──
 
     private fun drawVolumeExtended(canvas: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
@@ -214,9 +214,10 @@ class OSDView(context: Context) : View(context) {
         canvas.drawRoundRect(rf, r, r, pBorder)
 
         val pad = dp(12f)
-        val line1Y = h * 0.28f  // First line: volume bar
-        val line2Y = h * 0.55f  // Second line: source + mode
-        val line3Y = h * 0.78f  // Third line: signal + format + speakers
+        val line1Y = h * 0.15f  // First line: volume bar
+        val line2Y = h * 0.32f  // Second line: source + mode (full names!)
+        val line3Y = h * 0.46f  // Third line: signal + format + tech info
+        val layoutCenterY = h * 0.72f  // Speaker layout center
 
         // ── Line 1: VOL / MUTE + Bar + Value ──────────────────────
 
@@ -257,48 +258,59 @@ class OSDView(context: Context) : View(context) {
             canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), it)
         }
 
-        // ── Line 2: Input Source • Sound Mode ─────────────────────
+        // ── Line 2: Input Source • Sound Mode (FULL NAMES) ────────
 
         val infoText = buildString {
             state.inputSource?.let { append(it) }
             if (state.inputSource != null && state.soundMode != null) append(" • ")
-            state.soundMode?.let { append(it) }
+            state.soundMode?.let { append(it) }  // Full format names now!
         }
 
         if (infoText.isNotBlank()) {
             makePaint {
                 typeface = Typeface.DEFAULT
                 color = TEXT_DIM
-                textSize = dp(9f)
+                textSize = dp(8f)
                 textAlign = Paint.Align.CENTER
             }.let {
                 canvas.drawText(infoText, w / 2f, line2Y, it)
             }
         }
 
-        // ── Line 3: Signal • Format • Speakers ────────────────────
+        // ── Line 3: Signal • Format • Tech Info ───────────────────
 
-        val extendedText = buildString {
+        val techText = buildString {
             state.signalDetect?.let { append(it) }
             if (state.signalDetect != null && state.digitalMode != null) append(" • ")
             state.digitalMode?.let { append(it) }
-            val speakerStr = formatSpeakers(state.speakers)
-            if (speakerStr.isNotBlank() && (state.signalDetect != null || state.digitalMode != null)) {
-                append(" • ")
+
+            // Add technical features if active
+            val techFeatures = mutableListOf<String>()
+            state.drc?.let { if (it != "OFF") techFeatures.add("DRC:$it") }
+            state.audioRestorer?.let { if (it != "OFF") techFeatures.add("Restorer:$it") }
+            state.ecoMode?.let { if (it != "OFF") techFeatures.add("ECO:$it") }
+            state.hdmiAudioOut?.let { techFeatures.add("HDMI→$it") }
+
+            if (techFeatures.isNotEmpty()) {
+                if (state.signalDetect != null || state.digitalMode != null) append(" • ")
+                append(techFeatures.joinToString(" "))
             }
-            if (speakerStr.isNotBlank()) append(speakerStr)
         }
 
-        if (extendedText.isNotBlank()) {
+        if (techText.isNotBlank()) {
             makePaint {
                 typeface = Typeface.DEFAULT
                 color = TEXT_DIM
-                textSize = dp(8f)
+                textSize = dp(7f)
                 textAlign = Paint.Align.CENTER
             }.let {
-                canvas.drawText(extendedText, w / 2f, line3Y, it)
+                canvas.drawText(techText, w / 2f, line3Y, it)
             }
         }
+
+        // ── Visual Speaker Layout ──────────────────────────────────
+
+        drawSpeakerLayout(canvas, w / 2f, layoutCenterY, w)
     }
 
     // ── Helper: Format speaker list ────────────────────────────────
@@ -337,6 +349,88 @@ class OSDView(context: Context) : View(context) {
             // Many speakers: show count
             else -> "$count speakers"
         }
+    }
+
+    // ── Visual Speaker Layout (Overhead View) ──────────────────────
+
+    private fun drawSpeakerLayout(canvas: Canvas, centerX: Float, centerY: Float, layoutWidth: Float) {
+        val speakers = state.speakers
+        if (speakers.isEmpty()) return
+
+        // Speaker positions (relative to center, normalized -1.0 to 1.0)
+        val positions = mapOf(
+            // Front layer
+            "FL"  to Pair(-0.7f, -0.5f),   // Front Left
+            "FR"  to Pair(0.7f, -0.5f),    // Front Right
+            "C"   to Pair(0f, -0.6f),      // Center
+
+            // Surround layer
+            "SL"  to Pair(-0.8f, 0.3f),    // Surround Left
+            "SR"  to Pair(0.8f, 0.3f),     // Surround Right
+            "SBL" to Pair(-0.5f, 0.8f),    // Surround Back Left
+            "SBR" to Pair(0.5f, 0.8f),     // Surround Back Right
+            "SB"  to Pair(0f, 0.85f),      // Surround Back (single)
+
+            // Subwoofer(s)
+            "SW"  to Pair(-0.3f, 0.6f),    // Subwoofer
+            "SW2" to Pair(0.3f, 0.6f),     // Subwoofer 2
+
+            // Front Height (Atmos)
+            "FHL" to Pair(-0.7f, -0.75f),  // Front Height Left
+            "FHR" to Pair(0.7f, -0.75f),   // Front Height Right
+
+            // Top Front (Atmos)
+            "TFL" to Pair(-0.5f, -0.9f),   // Top Front Left
+            "TFR" to Pair(0.5f, -0.9f),    // Top Front Right
+
+            // Top Middle (Atmos)
+            "TML" to Pair(-0.5f, 0f),      // Top Middle Left
+            "TMR" to Pair(0.5f, 0f),       // Top Middle Right
+
+            // Dolby Atmos additional
+            "FDL" to Pair(-0.6f, -0.8f),   // Front Dolby Left
+            "FDR" to Pair(0.6f, -0.8f),    // Front Dolby Right
+            "SDL" to Pair(-0.8f, 0.5f),    // Surround Dolby Left
+            "SDR" to Pair(0.8f, 0.5f)      // Surround Dolby Right
+        )
+
+        val scale = layoutWidth * 0.4f  // Speaker area size
+        val radius = dp(4f)  // Speaker circle radius
+
+        // All possible speakers with their positions
+        val allSpeakers = positions.keys
+
+        allSpeakers.forEach { speakerCode ->
+            val (relX, relY) = positions[speakerCode] ?: return@forEach
+            val x = centerX + relX * scale
+            val y = centerY + relY * scale
+
+            val isActive = speakers.contains(speakerCode)
+
+            // Draw speaker circle
+            val circlePaint = makePaint {
+                style = Paint.Style.FILL
+                color = if (isActive) ACCENT else Color.parseColor("#10FFFFFF")
+            }
+            canvas.drawCircle(x, y, radius, circlePaint)
+
+            // Draw speaker label
+            val textPaint = makePaint {
+                typeface = Typeface.MONOSPACE
+                textSize = dp(7f)
+                textAlign = Paint.Align.CENTER
+                color = if (isActive) TEXT else TEXT_DIM
+            }
+            canvas.drawText(speakerCode, x, y - radius - dp(2f), textPaint)
+        }
+
+        // Draw listener position (center reference)
+        val listenerPaint = makePaint {
+            style = Paint.Style.STROKE
+            strokeWidth = dp(1f)
+            color = Color.parseColor("#30FFFFFF")
+        }
+        canvas.drawCircle(centerX, centerY, dp(3f), listenerPaint)
     }
 
 }

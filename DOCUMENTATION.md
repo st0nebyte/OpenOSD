@@ -52,25 +52,55 @@ Adds input source and sound mode information.
 ---
 
 ### EXTENDED Mode
-Complete information including signal type and speaker configuration.
+Complete information including signal type, full audio format names, technical details, and **visual speaker layout**.
 
 ```
 ┌──────────────────────────────────────┐
 │  VOL ▓▓▓▓▓▓▓▓▓▓░░░░░░░░  45         │
 │                                      │
-│        GAME • DIRECT                 │
+│   GAME • DOLBY ATMOS                 │
 │                                      │
-│     HDMI • AUTO • 5.1                │
+│   HDMI • AUTO • DRC:AUTO HDMI→AMP   │
+│                                      │
+│     TFL    TFR     ← Visual Layout   │
+│                                      │
+│   FL   C   FR      (Overhead View)   │
+│                                      │
+│   SL  ○  SR        ○ = Listener      │
+│                                      │
+│     SW                               │
 └──────────────────────────────────────┘
 ```
 
 **Features:**
 - All INFO features
+- **Full audio format names** (no abbreviations):
+  - `DOLBY ATMOS`, `DOLBY HD MSTR`, `DTS:X MSTR`
+  - `DOLBY HD+DS` (Dolby TrueHD + Dolby Surround Upmix)
+  - `DTS HD+NEURAL:X` (DTS-HD + Neural:X Upmix)
 - Signal detection (HDMI, DIGITAL, ANALOG, ARC)
 - Digital mode (AUTO, PCM, DTS)
-- Speaker configuration (5.1, 7.1, 5.1.2, etc.)
+- **Visual speaker layout** (overhead view):
+  - Active speakers highlighted in color
+  - Inactive speakers shown dimmed/transparent
+  - Individual speaker positions (FL, FR, C, SW, SL, SR, etc.)
+  - Supports Atmos height speakers (TFL, TFR, FHL, FHR)
+  - Listener position marker
+- Technical details:
+  - Dynamic Range Compression (DRC: OFF/AUTO/LOW/MID/HI)
+  - Audio Restorer (Restorer: OFF/LOW/MED/HI)
+  - HDMI Audio Output routing (HDMI→AMP or HDMI→TV)
+  - ECO Mode status (ECO:ON/AUTO/OFF)
 
-**Screen Coverage:** Maximum (80dp height × 240dp width)
+**Screen Coverage:** Maximum (120dp height × 240dp width)
+
+**Audio Format Examples:**
+- `DOLBY DIGITAL` - Dolby Digital 5.1
+- `DOLBY ATMOS` - Native Dolby Atmos object-based audio
+- `DTS:X MSTR` - DTS:X Master Audio
+- `DOLBY HD+DS` - Dolby TrueHD source + Dolby Surround upmixing
+- `DTS+NEURAL:X` - DTS source + Neural:X upmixing
+- `DIRECT` - Direct mode (no processing)
 
 **Signal Types:**
 - `HDMI` - HDMI digital input
@@ -104,7 +134,40 @@ Balanced size for comfortable viewing.
 ### LARGE (130%)
 Maximum visibility for larger screens.
 - Width: 312dp
-- Height: 52dp (STANDARD), 78dp (INFO), 104dp (EXTENDED)
+- Height: 52dp (STANDARD), 78dp (INFO), 156dp (EXTENDED)
+
+**Note:** All UI elements maintain consistent center-bottom alignment regardless of scale.
+
+---
+
+## Speaker Layout Visualization
+
+The EXTENDED mode includes an **overhead view** of your speaker configuration:
+
+### Layout Features
+- **Active Speakers:** Highlighted in color with labels (FL, FR, C, etc.)
+- **Inactive Speakers:** Shown dimmed/transparent
+- **Listener Position:** Center reference point (○)
+- **Real-time Updates:** Layout updates when AVR configuration changes
+
+### Supported Speaker Positions
+- **Front:** FL (Front Left), FR (Front Right), C (Center)
+- **Surround:** SL (Surround Left), SR (Surround Right)
+- **Surround Back:** SB (Single), SBL/SBR (Dual)
+- **Subwoofer:** SW, SW2 (Dual subs)
+- **Front Height (Atmos):** FHL, FHR
+- **Top Front (Atmos):** TFL, TFR
+- **Top Middle (Atmos):** TML, TMR
+- **Dolby Speakers:** FDL, FDR, SDL, SDR
+
+### Example Configurations Visualized
+- **2.0 Stereo:** FL, FR
+- **2.1:** FL, FR, SW
+- **5.1:** FL, FR, C, SW, SL, SR
+- **7.1:** FL, FR, C, SW, SL, SR, SBL, SBR
+- **5.1.2 (Atmos):** 5.1 + TFL, TFR or FHL, FHR
+- **7.1.2 (Atmos):** 7.1 + TFL, TFR
+- **Custom:** Any combination supported by AVR
 
 **Note:** All UI elements maintain consistent center-bottom alignment regardless of scale.
 
@@ -145,20 +208,31 @@ Screen Coverage: ~1.5% (1080p), ~0.8% (4K)
 ---
 
 ### Example 3: Audiophile Setup - EXTENDED MEDIUM
-Complete technical information for home theater enthusiasts.
+Complete technical information with visual speaker layout for home theater enthusiasts.
 
 ```
 Display Mode: EXTENDED
 Scale: MEDIUM (100%)
-Screen Coverage: ~3% (1080p), ~1.5% (4K)
+Screen Coverage: ~4.5% (1080p), ~2.2% (4K)
 
 ┌──────────────────────────────────────┐
 │  VOL ▓▓▓▓▓▓▓▓▓▓▓░░░░░  65           │
 │                                      │
-│          DVD • DD                    │
+│    BLU-RAY • DOLBY ATMOS             │
 │                                      │
-│      HDMI • DTS • 7.1                │
+│   HDMI • AUTO • DRC:AUTO HDMI→AMP   │
+│                                      │
+│      TFL         TFR                 │
+│                                      │
+│    FL    C    FR                     │
+│                                      │
+│   SL     ○     SR                    │
+│                                      │
+│   SW1   SB    SW2                    │
 └──────────────────────────────────────┘
+
+Active speakers (highlighted): FL, FR, C, SW1, SW2, SL, SR, SB, TFL, TFR
+Configuration: 7.1.2 (Dolby Atmos)
 ```
 
 ---
@@ -215,10 +289,14 @@ All elements are consistently aligned:
   - `MV?` - Query master volume
   - `MU?` - Query mute status
   - `SI?` - Query input source
-  - `MS?` - Query sound mode
+  - `MS?` - Query sound mode (full format names)
   - `SD?` - Query signal detection
   - `DC?` - Query digital mode
-  - `CV?` - Query channel volume (speakers)
+  - `CV?` - Query channel volume (active speakers)
+  - `PSDRC ?` - Query Dynamic Range Compression
+  - `PSRSTR ?` - Query Audio Restorer
+  - `VSAUDIO ?` - Query HDMI Audio Output routing
+  - `ECO?` - Query ECO mode status
 
 ### Volume Format
 - **Range:** -80.0 to +18.0 dB (absolute)
@@ -232,11 +310,18 @@ All elements are consistently aligned:
 - **Power:** `PWON` / `PWSTANDBY`
 - **Volume:** `MV27` (27.0), `MV275` (27.5)
 - **Mute:** `MUON` / `MUOFF`
-- **Source:** `SIGAME`, `SIDVD`, `SIBD` (BLU-RAY)
-- **Mode:** `MSSTEREO`, `MSDIRECT`, `MSDOLBY DIGITAL`
+- **Source:** `SIGAME`, `SIDVD`, `SIBD` (→ BLU-RAY)
+- **Mode (Full Names):**
+  - `MSSTEREO`, `MSDIRECT`
+  - `MSDOLBY ATMOS`, `MSDOLBY HD MSTR`, `MSDOLBY HD+DS`
+  - `MSDTS:X MSTR`, `MSDTS HD+NEURAL:X`, `MSDTS SURROUND`
 - **Signal:** `SDHDMI`, `SDDIGITAL`, `SDANALOG`, `SDARC`
 - **Format:** `DCAUTO`, `DCPCM`, `DCDTS`
 - **Speakers:** `CVFL 50`, `CVFR 50`, ..., `CVEND`
+- **DRC:** `PSDRC OFF`, `PSDRC AUTO`, `PSDRC LOW`, `PSDRC MID`, `PSDRC HI`
+- **Restorer:** `PSRSTR OFF`, `PSRSTR LOW`, `PSRSTR MED`, `PSRSTR HI`
+- **HDMI Output:** `VSAUDIO AMP`, `VSAUDIO TV`
+- **ECO:** `ECOON`, `ECOAUTO`, `ECOOFF`
 
 ### Overlay Window
 - **Type:** `TYPE_APPLICATION_OVERLAY` (Android 8+)
