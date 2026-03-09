@@ -13,6 +13,7 @@ android {
         targetSdk     = 36
         versionCode   = 4
         versionName   = "4.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -27,5 +28,8 @@ android {
     kotlinOptions { jvmTarget = "1.8" }
 }
 
-// No external dependencies - pure Android SDK only
-dependencies {}
+dependencies {
+    // Unit testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.22")
+}

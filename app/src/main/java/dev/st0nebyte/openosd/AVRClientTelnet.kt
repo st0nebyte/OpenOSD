@@ -237,26 +237,35 @@ class AVRClientTelnet(
             }
 
             // Dynamic Range Compression: PSDRC OFF, PSDRC AUTO, PSDRC LOW, PSDRC MID, PSDRC HI
+            // Note: DRC changes update state but don't trigger OSD display (only shown in EXTENDED mode)
             response.startsWith("PSDRC ") -> {
                 val drc = response.substring(6).trim()
                 next = next.copy(drc = drc)
             }
 
             // Audio Restorer: PSRSTR OFF, PSRSTR LOW, PSRSTR MED, PSRSTR HI
+            // Note: Restorer changes update state but don't trigger OSD display
             response.startsWith("PSRSTR ") -> {
                 val restorer = response.substring(7).trim()
                 next = next.copy(audioRestorer = restorer)
             }
 
             // HDMI Audio Output: VSAUDIO AMP, VSAUDIO TV
+            // Note: HDMI output changes update state but don't trigger OSD display
             response.startsWith("VSAUDIO ") -> {
                 val hdmiOut = response.substring(8).trim()
                 next = next.copy(hdmiAudioOut = hdmiOut)
             }
 
             // ECO Mode: ECOON, ECOAUTO, ECOOFF
+            // Note: ECO changes update state but don't trigger OSD display
             response.startsWith("ECO") -> {
-                val eco = response.substring(3).trim()
+                val eco = when (response) {
+                    "ECOON" -> "ON"
+                    "ECOAUTO" -> "AUTO"
+                    "ECOOFF" -> "OFF"
+                    else -> response.substring(3).trim()  // Fallback for unknown values
+                }
                 next = next.copy(ecoMode = eco)
             }
 

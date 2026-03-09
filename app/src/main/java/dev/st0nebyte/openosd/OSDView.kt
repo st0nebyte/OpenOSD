@@ -284,12 +284,12 @@ class OSDView(context: Context) : View(context) {
             if (state.signalDetect != null && state.digitalMode != null) append(" • ")
             state.digitalMode?.let { append(it) }
 
-            // Add technical features if active
+            // Add technical features if active (only show non-defaults to reduce clutter)
             val techFeatures = mutableListOf<String>()
-            state.drc?.let { if (it != "OFF") techFeatures.add("DRC:$it") }
-            state.audioRestorer?.let { if (it != "OFF") techFeatures.add("Restorer:$it") }
-            state.ecoMode?.let { if (it != "OFF") techFeatures.add("ECO:$it") }
-            state.hdmiAudioOut?.let { techFeatures.add("HDMI→$it") }
+            state.drc?.let { if (it != "OFF" && it != "AUTO") techFeatures.add("DRC:$it") }  // Only non-default
+            state.audioRestorer?.let { if (it != "OFF") techFeatures.add("R:$it") }  // Abbreviate to save space
+            state.ecoMode?.let { if (it == "ON") techFeatures.add("ECO") }  // Only when active
+            state.hdmiAudioOut?.let { if (it == "TV") techFeatures.add("→TV") }  // Only when non-standard
 
             if (techFeatures.isNotEmpty()) {
                 if (state.signalDetect != null || state.digitalMode != null) append(" • ")
@@ -355,7 +355,7 @@ class OSDView(context: Context) : View(context) {
 
     private fun drawSpeakerLayout(canvas: Canvas, centerX: Float, centerY: Float, layoutWidth: Float) {
         val speakers = state.speakers
-        if (speakers.isEmpty()) return
+        // Always show layout - active speakers highlighted, inactive speakers dimmed
 
         // Speaker positions (relative to center, normalized -1.0 to 1.0)
         val positions = mapOf(
