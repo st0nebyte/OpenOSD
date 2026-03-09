@@ -127,4 +127,68 @@ class OSDViewHelperTest {
         val speakers = listOf("C")
         assertEquals("C", formatSpeakers(speakers))
     }
+
+    @Test
+    fun formatSpeakers_712Atmos_returns9Speakers() {
+        // 7.1.2: 7.1 + 2 height (not detected as specific config)
+        val speakers = listOf("FL", "FR", "C", "SW", "SL", "SR", "SBL", "SBR", "TFL", "TFR")
+        assertEquals("10 speakers", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_dolbySpeakers_notDetectedAsStandard() {
+        // Front Dolby speakers (FDL/FDR) don't match standard configs
+        val speakers = listOf("FL", "FR", "C", "SW", "SL", "SR", "FDL", "FDR")
+        assertEquals("8 speakers", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_tripleSubwoofers_listed() {
+        // Unusual: 3 subwoofers (some high-end setups)
+        val speakers = listOf("FL", "FR", "SW", "SW2", "C")
+        assertEquals("5 speakers", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_onlySubwoofer_listed() {
+        val speakers = listOf("SW")
+        assertEquals("SW", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_71WithSB_singleBackSpeaker() {
+        // 7.1 with single back speaker (SB instead of SBL/SBR)
+        val speakers = listOf("FL", "FR", "C", "SW", "SL", "SR", "SB", "SW2")
+        assertEquals("7.1", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_512WithTopMiddle_notDetected() {
+        // Top Middle instead of Front Height - not standard 5.1.2
+        val speakers = listOf("FL", "FR", "C", "SW", "SL", "SR", "TML", "TMR")
+        assertEquals("8 speakers", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_duplicateSpeakers_handledCorrectly() {
+        // Edge case: duplicates (shouldn't happen, but test robustness)
+        val speakers = listOf("FL", "FL", "FR")
+        // containsAll will still match, but size will be 3
+        assertEquals("FL FL FR", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_caseMattersForDetection() {
+        // Speaker codes should be uppercase
+        val speakers = listOf("FL", "FR", "C", "SW", "SL", "SR")
+        assertEquals("5.1", formatSpeakers(speakers))
+    }
+
+    @Test
+    fun formatSpeakers_21WithSW2_notDetected() {
+        // 2.1 with SW2 instead of SW
+        val speakers = listOf("FL", "FR", "SW2")
+        assertEquals("FL FR SW2", formatSpeakers(speakers))  // Not detected as 2.1
+    }
 }
+

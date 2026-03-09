@@ -47,11 +47,22 @@ class OSDView(context: Context) : View(context) {
     private val BAR_FILL  = Color.parseColor("#90B0D0F0")  // Soft blue-white fill (56% opacity)
     private val SEPARATOR = Color.parseColor("#12FFFFFF")  // Very subtle separator
 
-    // ── Paints ───────────────────────────────────────────────────
+    // ── Paints (cached for performance) ──────────────────────────
     private fun makePaint(block: Paint.() -> Unit) = Paint(Paint.ANTI_ALIAS_FLAG).apply(block)
 
     private val pBg     = makePaint { style = Paint.Style.FILL; color = BG }
     private val pBorder = makePaint { style = Paint.Style.STROKE; strokeWidth = dp(1f); color = BORDER }
+
+    // Reusable paints (avoid allocation on every draw)
+    private val pBarBg     = makePaint { style = Paint.Style.FILL; color = BAR_BG }
+    private val pBarFill   = makePaint { style = Paint.Style.FILL; color = BAR_FILL }
+    private val pText      = makePaint { typeface = Typeface.DEFAULT; textAlign = Paint.Align.LEFT }
+    private val pTextDim   = makePaint { typeface = Typeface.DEFAULT; color = TEXT_DIM }
+    private val pTextCenter = makePaint { typeface = Typeface.DEFAULT; textAlign = Paint.Align.CENTER; color = TEXT_DIM }
+    private val pSpeakerActive = makePaint { style = Paint.Style.FILL; color = ACCENT }
+    private val pSpeakerInactive = makePaint { style = Paint.Style.FILL; color = Color.parseColor("#10FFFFFF") }
+    private val pSpeakerText = makePaint { typeface = Typeface.MONOSPACE; textAlign = Paint.Align.CENTER }
+    private val pListener = makePaint { style = Paint.Style.STROKE; strokeWidth = dp(1f); color = Color.parseColor("#30FFFFFF") }
 
     private val rf = RectF()
 
@@ -91,14 +102,10 @@ class OSDView(context: Context) : View(context) {
         val midY = h / 2f
 
         // VOL / MUTE label (compact)
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = if (state.muted) TEXT_MUTE else TEXT_DIM
-            textSize = dp(10f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, midY + dp(3.5f), it)
-        }
+        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
+        pTextDim.textSize = dp(10f)
+        pTextDim.textAlign = Paint.Align.LEFT
+        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, midY + dp(3.5f), pTextDim)
 
         // Volume bar (tighter layout)
         val barX = pad + dp(32f)
@@ -108,24 +115,20 @@ class OSDView(context: Context) : View(context) {
 
         // Bar background
         rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_BG })
+        canvas.drawRect(rf, pBarBg)
 
         // Bar fill
         val fillW = (barW * animVol).coerceAtLeast(0f)
         if (fillW > 2f) {
             rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_FILL })
+            canvas.drawRect(rf, pBarFill)
         }
 
         // Volume value (compact)
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = TEXT
-            textSize = dp(15f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(state.volumeString, barX + barW + dp(6f), midY + dp(5f), it)
-        }
+        pText.color = TEXT
+        pText.textSize = dp(15f)
+        pText.textAlign = Paint.Align.LEFT
+        canvas.drawText(state.volumeString, barX + barW + dp(6f), midY + dp(5f), pText)
     }
 
     // ── Volume OSD with Info (source + sound mode) ────────────────
@@ -146,14 +149,10 @@ class OSDView(context: Context) : View(context) {
         // ── Line 1: VOL / MUTE + Bar + Value ──────────────────────
 
         // VOL / MUTE label
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = if (state.muted) TEXT_MUTE else TEXT_DIM
-            textSize = dp(10f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), it)
-        }
+        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
+        pTextDim.textSize = dp(10f)
+        pTextDim.textAlign = Paint.Align.LEFT
+        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), pTextDim)
 
         // Volume bar
         val barX = pad + dp(32f)
@@ -163,24 +162,20 @@ class OSDView(context: Context) : View(context) {
 
         // Bar background
         rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_BG })
+        canvas.drawRect(rf, pBarBg)
 
         // Bar fill
         val fillW = (barW * animVol).coerceAtLeast(0f)
         if (fillW > 2f) {
             rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_FILL })
+            canvas.drawRect(rf, pBarFill)
         }
 
         // Volume value
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = TEXT
-            textSize = dp(15f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), it)
-        }
+        pText.color = TEXT
+        pText.textSize = dp(15f)
+        pText.textAlign = Paint.Align.LEFT
+        canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), pText)
 
         // ── Line 2: Input Source • Sound Mode ─────────────────────
 
@@ -191,14 +186,8 @@ class OSDView(context: Context) : View(context) {
         }
 
         if (infoText.isNotBlank()) {
-            makePaint {
-                typeface = Typeface.DEFAULT
-                color = TEXT_DIM
-                textSize = dp(9f)
-                textAlign = Paint.Align.CENTER
-            }.let {
-                canvas.drawText(infoText, w / 2f, line2Y, it)
-            }
+            pTextCenter.textSize = dp(9f)
+            canvas.drawText(infoText, w / 2f, line2Y, pTextCenter)
         }
     }
 
@@ -222,14 +211,10 @@ class OSDView(context: Context) : View(context) {
         // ── Line 1: VOL / MUTE + Bar + Value ──────────────────────
 
         // VOL / MUTE label
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = if (state.muted) TEXT_MUTE else TEXT_DIM
-            textSize = dp(10f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), it)
-        }
+        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
+        pTextDim.textSize = dp(10f)
+        pTextDim.textAlign = Paint.Align.LEFT
+        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), pTextDim)
 
         // Volume bar
         val barX = pad + dp(32f)
@@ -239,24 +224,20 @@ class OSDView(context: Context) : View(context) {
 
         // Bar background
         rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_BG })
+        canvas.drawRect(rf, pBarBg)
 
         // Bar fill
         val fillW = (barW * animVol).coerceAtLeast(0f)
         if (fillW > 2f) {
             rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, makePaint { style = Paint.Style.FILL; color = BAR_FILL })
+            canvas.drawRect(rf, pBarFill)
         }
 
         // Volume value
-        makePaint {
-            typeface = Typeface.DEFAULT
-            color = TEXT
-            textSize = dp(15f)
-            textAlign = Paint.Align.LEFT
-        }.let {
-            canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), it)
-        }
+        pText.color = TEXT
+        pText.textSize = dp(15f)
+        pText.textAlign = Paint.Align.LEFT
+        canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), pText)
 
         // ── Line 2: Input Source • Sound Mode (FULL NAMES) ────────
 
@@ -267,14 +248,8 @@ class OSDView(context: Context) : View(context) {
         }
 
         if (infoText.isNotBlank()) {
-            makePaint {
-                typeface = Typeface.DEFAULT
-                color = TEXT_DIM
-                textSize = dp(8f)
-                textAlign = Paint.Align.CENTER
-            }.let {
-                canvas.drawText(infoText, w / 2f, line2Y, it)
-            }
+            pTextCenter.textSize = dp(8f)
+            canvas.drawText(infoText, w / 2f, line2Y, pTextCenter)
         }
 
         // ── Line 3: Signal • Format • Tech Info ───────────────────
@@ -298,14 +273,8 @@ class OSDView(context: Context) : View(context) {
         }
 
         if (techText.isNotBlank()) {
-            makePaint {
-                typeface = Typeface.DEFAULT
-                color = TEXT_DIM
-                textSize = dp(7f)
-                textAlign = Paint.Align.CENTER
-            }.let {
-                canvas.drawText(techText, w / 2f, line3Y, it)
-            }
+            pTextCenter.textSize = dp(7f)
+            canvas.drawText(techText, w / 2f, line3Y, pTextCenter)
         }
 
         // ── Visual Speaker Layout ──────────────────────────────────
@@ -359,8 +328,33 @@ class OSDView(context: Context) : View(context) {
         val speakers = state.speakers
         // Always show layout - active speakers highlighted, inactive speakers dimmed
 
-        // Speaker positions (relative to center, normalized -1.0 to 1.0)
-        val positions = mapOf(
+        val scale = layoutWidth * 0.4f  // Speaker area size
+        val radius = dp(4f)  // Speaker circle radius
+
+        // All possible speakers with their positions
+        SPEAKER_POSITIONS.forEach { (speakerCode, position) ->
+            val (relX, relY) = position
+            val x = centerX + relX * scale
+            val y = centerY + relY * scale
+
+            val isActive = speakers.contains(speakerCode)
+
+            // Draw speaker circle (reuse cached paints)
+            canvas.drawCircle(x, y, radius, if (isActive) pSpeakerActive else pSpeakerInactive)
+
+            // Draw speaker label (reuse cached paint)
+            pSpeakerText.textSize = dp(7f)
+            pSpeakerText.color = if (isActive) TEXT else TEXT_DIM
+            canvas.drawText(speakerCode, x, y - radius - dp(2f), pSpeakerText)
+        }
+
+        // Draw listener position (center reference)
+        canvas.drawCircle(centerX, centerY, dp(3f), pListener)
+    }
+
+    companion object {
+        // Speaker positions (cached, relative to center, normalized -1.0 to 1.0)
+        private val SPEAKER_POSITIONS = mapOf(
             // Front layer
             "FL"  to Pair(-0.7f, -0.5f),   // Front Left
             "FR"  to Pair(0.7f, -0.5f),    // Front Right
@@ -395,44 +389,6 @@ class OSDView(context: Context) : View(context) {
             "SDL" to Pair(-0.8f, 0.5f),    // Surround Dolby Left
             "SDR" to Pair(0.8f, 0.5f)      // Surround Dolby Right
         )
-
-        val scale = layoutWidth * 0.4f  // Speaker area size
-        val radius = dp(4f)  // Speaker circle radius
-
-        // All possible speakers with their positions
-        val allSpeakers = positions.keys
-
-        allSpeakers.forEach { speakerCode ->
-            val (relX, relY) = positions[speakerCode] ?: return@forEach
-            val x = centerX + relX * scale
-            val y = centerY + relY * scale
-
-            val isActive = speakers.contains(speakerCode)
-
-            // Draw speaker circle
-            val circlePaint = makePaint {
-                style = Paint.Style.FILL
-                color = if (isActive) ACCENT else Color.parseColor("#10FFFFFF")
-            }
-            canvas.drawCircle(x, y, radius, circlePaint)
-
-            // Draw speaker label
-            val textPaint = makePaint {
-                typeface = Typeface.MONOSPACE
-                textSize = dp(7f)
-                textAlign = Paint.Align.CENTER
-                color = if (isActive) TEXT else TEXT_DIM
-            }
-            canvas.drawText(speakerCode, x, y - radius - dp(2f), textPaint)
-        }
-
-        // Draw listener position (center reference)
-        val listenerPaint = makePaint {
-            style = Paint.Style.STROKE
-            strokeWidth = dp(1f)
-            color = Color.parseColor("#30FFFFFF")
-        }
-        canvas.drawCircle(centerX, centerY, dp(3f), listenerPaint)
     }
 
 }
