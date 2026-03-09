@@ -44,16 +44,21 @@ class OSDDisplayModeTest {
     @Test
     fun trigger_allValuesExist() {
         val triggers = OSDTrigger.values()
-        assertEquals(3, triggers.size)
+        assertEquals(2, triggers.size)
         assertTrue(triggers.contains(OSDTrigger.VOLUME))
-        assertTrue(triggers.contains(OSDTrigger.SOURCE))
-        assertTrue(triggers.contains(OSDTrigger.OTHER))
+        assertTrue(triggers.contains(OSDTrigger.MUTE))
     }
 
     @Test
     fun trigger_valueOf_worksCorrectly() {
         assertEquals(OSDTrigger.VOLUME, OSDTrigger.valueOf("VOLUME"))
-        assertEquals(OSDTrigger.SOURCE, OSDTrigger.valueOf("SOURCE"))
-        assertEquals(OSDTrigger.OTHER, OSDTrigger.valueOf("OTHER"))
+        assertEquals(OSDTrigger.MUTE, OSDTrigger.valueOf("MUTE"))
+    }
+
+    @Test
+    fun trigger_hasTimeout() {
+        // Both triggers should have 3 second timeout
+        assertEquals(3000L, OSDTrigger.VOLUME.timeoutMs)
+        assertEquals(3000L, OSDTrigger.MUTE.timeoutMs)
     }
 }
