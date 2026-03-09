@@ -118,14 +118,14 @@ class AVRStateTest {
     }
 
     @Test
-    fun volumeString_edgeCase_0point4_roundsDown() {
-        // 27.4 should round down to 27
+    fun volumeString_edgeCase_0point4_roundsToHalf() {
+        // 27.4 should round to 27.5 (Denon only uses .5 steps)
         val state = AVRState(volumeDb = -52.6)
-        assertEquals("27", state.volumeString)
+        assertEquals("27.5", state.volumeString)
     }
 
     @Test
-    fun volumeString_edgeCase_0point6_roundsUpWithHalf() {
+    fun volumeString_edgeCase_0point6_roundsToHalf() {
         // 27.6 should show as 27.5 (Denon only uses .5 steps)
         val state = AVRState(volumeDb = -52.4)
         assertEquals("27.5", state.volumeString)

@@ -323,25 +323,27 @@ class OSDView(context: Context) : View(context) {
         val hasFrontHeight = speakers.any { it.startsWith("FH") }
 
         // Common configurations
+        // NOTE: Order matters! Check specific configs before generic ones
         return when {
-            // 5.1 configurations
-            count == 6 && hasSubwoofer &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1"
-
-            // 7.1 configurations
-            count == 8 && hasSubwoofer &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "7.1"
-
-            // 5.1.2 Atmos (5.1 + 2 height)
-            count == 8 && hasSubwoofer && hasFrontHeight &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1.2"
-
             // Stereo
             count == 2 && speakers.containsAll(listOf("FL", "FR")) -> "2.0"
 
             // Stereo with sub
             count == 3 && hasSubwoofer &&
                 speakers.containsAll(listOf("FL", "FR", "SW")) -> "2.1"
+
+            // 5.1 configurations
+            count == 6 && hasSubwoofer &&
+                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1"
+
+            // 5.1.2 Atmos (5.1 + 2 height) - CHECK BEFORE 7.1!
+            count == 8 && hasSubwoofer && hasFrontHeight &&
+                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1.2"
+
+            // 7.1 configurations (must be after 5.1.2 check)
+            count == 8 && hasSubwoofer &&
+                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) &&
+                (speakers.contains("SBL") || speakers.contains("SB")) -> "7.1"
 
             // Custom: just list them
             count <= 4 -> speakers.joinToString(" ")
