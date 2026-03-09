@@ -5,7 +5,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,133 +24,182 @@ class MainActivity : Activity() {
     private lateinit var spScale:       Spinner
     private lateinit var tvStatus:      TextView
 
+    // ── Modern Light Colors (matching glassy OSD aesthetic) ──
+    private val BG_MAIN    = Color.parseColor("#F5F7FA")     // Light grey background
+    private val BG_CARD    = Color.parseColor("#FFFFFF")     // White cards
+    private val ACCENT     = Color.parseColor("#88B4D0")     // Soft blue (lighter OSD blue)
+    private val TEXT_MAIN  = Color.parseColor("#2C3E50")     // Dark grey text
+    private val TEXT_DIM   = Color.parseColor("#7B8A98")     // Dimmed text
+    private val BORDER     = Color.parseColor("#E1E8ED")     // Subtle border
+    private val SUCCESS    = Color.parseColor("#4CAF50")     // Green for success
+    private val WARNING    = Color.parseColor("#FF9800")     // Orange for warnings
+    private val ERROR      = Color.parseColor("#F44336")     // Red for errors
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.decorView.setBackgroundColor(Color.parseColor("#080F18"))
+        window.decorView.setBackgroundColor(BG_MAIN)
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(32), dp(40), dp(32), dp(32))
+            setPadding(dp(24), dp(32), dp(24), dp(24))
         }
 
+        // App Title
         root.addView(TextView(this).apply {
-            text = "DENON OSD"; textSize = 22f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#00D8D8"))
+            text = "OpenOSD"
+            textSize = 28f
+            setTextColor(TEXT_MAIN)
             gravity = Gravity.CENTER_HORIZONTAL
         })
+        root.addView(TextView(this).apply {
+            text = "Modern OSD for Denon AVR"
+            textSize = 13f
+            setTextColor(TEXT_DIM)
+            gravity = Gravity.CENTER_HORIZONTAL
+        })
+        root.addView(space(32))
+
+        // IP Address Card
+        root.addView(makeCard().apply {
+            addView(TextView(this@MainActivity).apply {
+                text = "AVR IP Address"
+                textSize = 12f
+                setTextColor(TEXT_DIM)
+                setPadding(0, 0, 0, dp(8))
+            })
+
+            etHost = EditText(this@MainActivity).apply {
+                hint = "192.168.1.x"
+                textSize = 16f
+                setTextColor(TEXT_MAIN)
+                setHintTextColor(Color.parseColor("#B0BEC5"))
+                background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
+                setPadding(dp(16), dp(14), dp(16), dp(14))
+                setSingleLine()
+                imeOptions = EditorInfo.IME_ACTION_DONE
+                isFocusable = true
+                isFocusableInTouchMode = true
+                setText("192.168.178.130")
+
+                setOnEditorActionListener { _, actionId, _ ->
+                    if (actionId == EditorInfo.IME_ACTION_DONE) {
+                        hideKeyboard(this); true
+                    } else false
+                }
+            }
+            addView(etHost, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        })
+
+        root.addView(space(16))
+
+        // Display Mode Card
+        root.addView(makeCard().apply {
+            addView(TextView(this@MainActivity).apply {
+                text = "Display Mode"
+                textSize = 12f
+                setTextColor(TEXT_DIM)
+                setPadding(0, 0, 0, dp(8))
+            })
+
+            spDisplayMode = Spinner(this@MainActivity).apply {
+                val modes = arrayOf("Standard", "Info", "Extended")
+                adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, modes).apply {
+                    setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                }
+                background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
+                setPadding(dp(16), dp(14), dp(16), dp(14))
+
+                // Load saved preference
+                val savedMode = prefs().getString(OSDService.KEY_DISPLAY_MODE, "STANDARD") ?: "STANDARD"
+                setSelection(OSDDisplayMode.valueOf(savedMode).ordinal)
+
+                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val mode = OSDDisplayMode.values()[position]
+                        prefs().edit().putString(OSDService.KEY_DISPLAY_MODE, mode.name).apply()
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+            }
+            addView(spDisplayMode, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        })
+
+        root.addView(space(16))
+
+        // Scale Card
+        root.addView(makeCard().apply {
+            addView(TextView(this@MainActivity).apply {
+                text = "Scale"
+                textSize = 12f
+                setTextColor(TEXT_DIM)
+                setPadding(0, 0, 0, dp(8))
+            })
+
+            spScale = Spinner(this@MainActivity).apply {
+                val scales = arrayOf("Small (75%)", "Medium (100%)", "Large (130%)")
+                adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, scales).apply {
+                    setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                }
+                background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
+                setPadding(dp(16), dp(14), dp(16), dp(14))
+
+                // Load saved preference
+                val savedScale = prefs().getString(OSDService.KEY_SCALE, "MEDIUM") ?: "MEDIUM"
+                setSelection(OSDScale.valueOf(savedScale).ordinal)
+
+                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        val scale = OSDScale.values()[position]
+                        prefs().edit().putString(OSDService.KEY_SCALE, scale.name).apply()
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+            }
+            addView(spScale, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        })
+
         root.addView(space(24))
 
-        root.addView(TextView(this).apply {
-            text = "AVR IP-Adresse"; textSize = 12f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#557788"))
-            setPadding(0, 0, 0, dp(6))
-        })
-
-        etHost = EditText(this).apply {
-            hint = "192.168.1.x"
-            typeface = Typeface.MONOSPACE
-            textSize = 18f
-            setTextColor(Color.parseColor("#00D8D8"))
-            setHintTextColor(Color.parseColor("#224444"))
-            setBackgroundColor(Color.parseColor("#0C1820"))
-            setPadding(dp(12), dp(14), dp(12), dp(14))
-            setSingleLine()
-            imeOptions = EditorInfo.IME_ACTION_DONE
-            isFocusable = true
-            isFocusableInTouchMode = true
-            setText("192.168.178.130")
-
-            setOnEditorActionListener { _, actionId, _ ->
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    hideKeyboard(this); true
-                } else false
-            }
-        }
-        root.addView(etHost, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-
-        root.addView(space(16))
-
-        root.addView(TextView(this).apply {
-            text = "OSD Anzeigemodus"; textSize = 12f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#557788"))
-            setPadding(0, 0, 0, dp(6))
-        })
-
-        spDisplayMode = Spinner(this).apply {
-            val modes = arrayOf("Standard (nur Lautstärke)", "Info (mit Sound Mode + Input)", "Extended (mit Signal + Lautsprecher)")
-            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, modes).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            setBackgroundColor(Color.parseColor("#0C1820"))
-            setPadding(dp(12), dp(14), dp(12), dp(14))
-
-            // Load saved preference
-            val savedMode = prefs().getString(OSDService.KEY_DISPLAY_MODE, "STANDARD") ?: "STANDARD"
-            setSelection(OSDDisplayMode.valueOf(savedMode).ordinal)
-
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    val mode = OSDDisplayMode.values()[position]
-                    prefs().edit().putString(OSDService.KEY_DISPLAY_MODE, mode.name).apply()
-                }
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
-            }
-        }
-        root.addView(spDisplayMode, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-
-        root.addView(space(16))
-
-        root.addView(TextView(this).apply {
-            text = "OSD Skalierung"; textSize = 12f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#557788"))
-            setPadding(0, 0, 0, dp(6))
-        })
-
-        spScale = Spinner(this).apply {
-            val scales = arrayOf("Klein (75%)", "Mittel (100%)", "Groß (130%)")
-            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, scales).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            setBackgroundColor(Color.parseColor("#0C1820"))
-            setPadding(dp(12), dp(14), dp(12), dp(14))
-
-            // Load saved preference
-            val savedScale = prefs().getString(OSDService.KEY_SCALE, "MEDIUM") ?: "MEDIUM"
-            setSelection(OSDScale.valueOf(savedScale).ordinal)
-
-            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    val scale = OSDScale.values()[position]
-                    prefs().edit().putString(OSDService.KEY_SCALE, scale.name).apply()
-                }
-                override fun onNothingSelected(parent: AdapterView<*>?) {}
-            }
-        }
-        root.addView(spScale, LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-
-        root.addView(space(16))
-
+        // Status indicator
         tvStatus = TextView(this).apply {
-            text = "● Inaktiv"; textSize = 12f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#556666"))
+            text = "● Ready"
+            textSize = 13f
+            setTextColor(TEXT_DIM)
+            gravity = Gravity.CENTER_HORIZONTAL
             setPadding(0, 0, 0, dp(16))
         }
         root.addView(tvStatus)
 
-        root.addView(makeBtn("▶  OSD STARTEN")           { startOSD() })
-        root.addView(space(8))
-        root.addView(makeBtn("■  STOPPEN")                { OSDService.stop(this); setStatus(false) })
-        root.addView(space(8))
-        root.addView(makeBtn("⚙  OVERLAY-BERECHTIGUNG")  { handleOverlayPermission() })
-        root.addView(space(24))
+        // Action buttons
+        root.addView(makeButton("Start OSD", ACCENT) { startOSD() })
+        root.addView(space(12))
+        root.addView(makeButton("Stop", Color.parseColor("#B0BEC5")) {
+            OSDService.stop(this); setStatus(false)
+        })
+        root.addView(space(12))
+        root.addView(makeButton("Grant Overlay Permission", Color.parseColor("#607D8B")) {
+            handleOverlayPermission()
+        })
 
-        root.addView(TextView(this).apply {
-            text = "Tipp: Overlay-Berechtigung auf Fire TV\nnur per ADB möglich:\nadb shell appops set dev.st0nebyte.openosd\n  SYSTEM_ALERT_WINDOW allow"
-            textSize = 11f; typeface = Typeface.MONOSPACE
-            setTextColor(Color.parseColor("#3A5560"))
+        root.addView(space(32))
+
+        // Fire TV Hint Card
+        root.addView(makeCard(Color.parseColor("#FFF8E1")).apply {
+            addView(TextView(this@MainActivity).apply {
+                text = "💡 Fire TV Setup"
+                textSize = 12f
+                setTextColor(Color.parseColor("#F57C00"))
+                setPadding(0, 0, 0, dp(8))
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "Overlay permission on Fire TV requires ADB:\n\nadb shell appops set dev.st0nebyte.openosd \\\n  SYSTEM_ALERT_WINDOW allow"
+                textSize = 11f
+                setTextColor(Color.parseColor("#E65100"))
+                lineHeight = (textSize * 1.5f).toInt()
+            })
         })
 
         setContentView(ScrollView(this).apply { addView(root) })
@@ -164,35 +213,34 @@ class MainActivity : Activity() {
     private fun updateStatus() {
         val hasOverlay = Settings.canDrawOverlays(this)
         tvStatus.text = when {
-            !hasOverlay -> "⚠ Overlay-Berechtigung fehlt!"
-            else        -> "● Bereit"
+            !hasOverlay -> "⚠ Overlay permission required"
+            else        -> "● Ready"
         }
         tvStatus.setTextColor(
-            if (!hasOverlay) Color.parseColor("#FF6644")
-            else Color.parseColor("#40CC40"))
+            if (!hasOverlay) ERROR else SUCCESS)
     }
 
     private fun startOSD() {
         val host = etHost.text.toString().trim()
         if (host.isBlank()) {
-            tvStatus.text = "⚠ IP eingeben!"
-            tvStatus.setTextColor(Color.parseColor("#FF6644"))
+            tvStatus.text = "⚠ Please enter IP address"
+            tvStatus.setTextColor(ERROR)
             etHost.requestFocus()
             return
         }
         if (!Settings.canDrawOverlays(this)) {
             // On Fire TV: just try anyway, show ADB hint
-            tvStatus.text = "⚠ Overlay fehlt – starte trotzdem"
-            tvStatus.setTextColor(Color.parseColor("#FFAA00"))
+            tvStatus.text = "⚠ Missing permission – trying anyway"
+            tvStatus.setTextColor(WARNING)
         }
         OSDService.start(this, host)
         setStatus(true)
     }
 
     private fun setStatus(running: Boolean) {
-        tvStatus.text = if (running) "● Läuft – AVR Lautstärke ändern zum Testen" else "● Gestoppt"
+        tvStatus.text = if (running) "● Running – Change volume to test" else "● Stopped"
         tvStatus.setTextColor(
-            if (running) Color.parseColor("#40CC40") else Color.parseColor("#556666"))
+            if (running) SUCCESS else TEXT_DIM)
     }
 
     private fun handleOverlayPermission() {
@@ -211,35 +259,63 @@ class MainActivity : Activity() {
 
     private fun showAdbDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Fire TV: ADB erforderlich")
+            .setTitle("Fire TV: ADB Required")
             .setMessage(
-                "Fire TV hat kein Overlay-Einstellungsmenü.\n\n" +
-                "Einmalig per ADB auf dem PC ausführen:\n\n" +
+                "Fire TV has no overlay permission settings UI.\n\n" +
+                "Run this command once via ADB on your PC:\n\n" +
                 "adb connect FIRETV_IP:5555\n\n" +
                 "adb shell appops set \\\n" +
                 "  dev.st0nebyte.openosd \\\n" +
                 "  SYSTEM_ALERT_WINDOW allow\n\n" +
-                "Danach OSD Starten drücken."
+                "Then press Start OSD."
             )
             .setPositiveButton("OK", null)
             .show()
     }
 
-    private fun makeBtn(label: String, onClick: () -> Unit) = TextView(this).apply {
-        text = label; textSize = 14f; typeface = Typeface.MONOSPACE
-        setTextColor(Color.parseColor("#00D8D8"))
-        setBackgroundColor(Color.parseColor("#0C1C2C"))
-        setPadding(dp(20), dp(16), dp(20), dp(16))
+    private fun makeCard(bgColor: Int = BG_CARD): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = makeCardBg(bgColor)
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+    }
+
+    private fun makeButton(label: String, color: Int, onClick: () -> Unit) = TextView(this).apply {
+        text = label
+        textSize = 15f
+        setTextColor(Color.WHITE)
+        background = makeButtonBg(color)
+        setPadding(dp(24), dp(16), dp(24), dp(16))
         gravity = Gravity.CENTER_HORIZONTAL
         isFocusable = true
-        isFocusableInTouchMode = false  // don't steal focus on touch
+        isFocusableInTouchMode = false
 
         setOnFocusChangeListener { _, focused ->
-            setBackgroundColor(
-                if (focused) Color.parseColor("#0D3050")
-                else         Color.parseColor("#0C1C2C"))
+            alpha = if (focused) 0.85f else 1.0f
         }
         setOnClickListener { onClick() }
+    }
+
+    private fun makeCardBg(color: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(12f)
+        setStroke(dp(1), BORDER)
+    }
+
+    private fun makeButtonBg(color: Int) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = dp(10f)
+    }
+
+    private fun makeRoundedBg(bgColor: Int, borderColor: Int, radius: Float) = GradientDrawable().apply {
+        setColor(bgColor)
+        cornerRadius = radius
+        setStroke(dp(1), borderColor)
     }
 
     private fun hideKeyboard(v: View) {
@@ -252,5 +328,6 @@ class MainActivity : Activity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+    private fun dp(v: Float) = (v * resources.displayMetrics.density)
     private fun prefs()    = getSharedPreferences("openosd_prefs", Context.MODE_PRIVATE)
 }
