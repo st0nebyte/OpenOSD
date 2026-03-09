@@ -69,6 +69,7 @@ class MainActivity : Activity() {
             })
 
             etHost = EditText(this@MainActivity).apply {
+                id = View.generateViewId()
                 hint = "192.168.1.x"
                 textSize = 16f
                 setTextColor(TEXT_MAIN)
@@ -80,6 +81,14 @@ class MainActivity : Activity() {
                 isFocusable = true
                 isFocusableInTouchMode = true
                 setText("192.168.178.130")
+
+                // Better focus indication for TV remote
+                setOnFocusChangeListener { view, focused ->
+                    (view.background as? GradientDrawable)?.setStroke(
+                        dp(if (focused) 3 else 1),
+                        if (focused) ACCENT else BORDER
+                    )
+                }
 
                 setOnEditorActionListener { _, actionId, _ ->
                     if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -103,12 +112,21 @@ class MainActivity : Activity() {
             })
 
             spDisplayMode = Spinner(this@MainActivity).apply {
+                id = View.generateViewId()
                 val modes = arrayOf("Standard", "Info", "Extended")
                 adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, modes).apply {
                     setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 }
                 background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
                 setPadding(dp(16), dp(14), dp(16), dp(14))
+
+                // Better focus indication for TV remote
+                setOnFocusChangeListener { view, focused ->
+                    (view.background as? GradientDrawable)?.setStroke(
+                        dp(if (focused) 3 else 1),
+                        if (focused) ACCENT else BORDER
+                    )
+                }
 
                 // Load saved preference
                 val savedMode = prefs().getString(OSDService.KEY_DISPLAY_MODE, "STANDARD") ?: "STANDARD"
@@ -138,12 +156,21 @@ class MainActivity : Activity() {
             })
 
             spScale = Spinner(this@MainActivity).apply {
+                id = View.generateViewId()
                 val scales = arrayOf("Small (75%)", "Medium (100%)", "Large (130%)")
                 adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, scales).apply {
                     setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 }
                 background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
                 setPadding(dp(16), dp(14), dp(16), dp(14))
+
+                // Better focus indication for TV remote
+                setOnFocusChangeListener { view, focused ->
+                    (view.background as? GradientDrawable)?.setStroke(
+                        dp(if (focused) 3 else 1),
+                        if (focused) ACCENT else BORDER
+                    )
+                }
 
                 // Load saved preference
                 val savedScale = prefs().getString(OSDService.KEY_SCALE, "MEDIUM") ?: "MEDIUM"
@@ -203,6 +230,9 @@ class MainActivity : Activity() {
         })
 
         setContentView(ScrollView(this).apply { addView(root) })
+
+        // Set initial focus on IP address field for TV remote
+        etHost.post { etHost.requestFocus() }
     }
 
     override fun onResume() {
@@ -286,6 +316,7 @@ class MainActivity : Activity() {
     }
 
     private fun makeButton(label: String, color: Int, onClick: () -> Unit) = TextView(this).apply {
+        id = View.generateViewId()
         text = label
         textSize = 15f
         setTextColor(Color.WHITE)
@@ -295,8 +326,23 @@ class MainActivity : Activity() {
         isFocusable = true
         isFocusableInTouchMode = false
 
-        setOnFocusChangeListener { _, focused ->
-            alpha = if (focused) 0.85f else 1.0f
+        // Better focus indication for TV remote (brighter + scale)
+        setOnFocusChangeListener { view, focused ->
+            if (focused) {
+                view.scaleX = 1.05f
+                view.scaleY = 1.05f
+                view.alpha = 1.0f
+                (view.background as? GradientDrawable)?.let { bg ->
+                    // Brighten color when focused
+                    val focusColor = adjustBrightness(color, 1.2f)
+                    bg.setColor(focusColor)
+                }
+            } else {
+                view.scaleX = 1.0f
+                view.scaleY = 1.0f
+                view.alpha = 0.95f
+                (view.background as? GradientDrawable)?.setColor(color)
+            }
         }
         setOnClickListener { onClick() }
     }
@@ -330,4 +376,11 @@ class MainActivity : Activity() {
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
     private fun dp(v: Float) = (v * resources.displayMetrics.density)
     private fun prefs()    = getSharedPreferences("openosd_prefs", Context.MODE_PRIVATE)
+
+    private fun adjustBrightness(color: Int, factor: Float): Int {
+        val r = (Color.red(color) * factor).toInt().coerceIn(0, 255)
+        val g = (Color.green(color) * factor).toInt().coerceIn(0, 255)
+        val b = (Color.blue(color) * factor).toInt().coerceIn(0, 255)
+        return Color.rgb(r, g, b)
+    }
 }
