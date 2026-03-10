@@ -65,7 +65,11 @@ class AVRClientTelnet(
         thread?.interrupt()
         // Close connection async to avoid blocking caller
         Thread {
-            Thread.sleep(100)  // Let thread exit first
+            try {
+                Thread.sleep(100)  // Let thread exit first
+            } catch (e: InterruptedException) {
+                // Interrupted during shutdown, just close immediately
+            }
             closeConnection()
         }.start()
     }
@@ -78,6 +82,10 @@ class AVRClientTelnet(
                     queryInitialState()
                     readLoop()
                 }
+            } catch (e: InterruptedException) {
+                Log.i(TAG, "Connection loop interrupted, stopping...")
+                running = false
+                break
             } catch (e: Exception) {
                 Log.w(TAG, "Connection error: ${e.message}")
                 mainHandler.post { onConnected(false) }
@@ -85,10 +93,17 @@ class AVRClientTelnet(
             }
 
             if (running && !connected) {
-                Log.d(TAG, "Reconnecting in ${RECONNECT_DELAY_MS}ms...")
-                Thread.sleep(RECONNECT_DELAY_MS)
+                try {
+                    Log.d(TAG, "Reconnecting in ${RECONNECT_DELAY_MS}ms...")
+                    Thread.sleep(RECONNECT_DELAY_MS)
+                } catch (e: InterruptedException) {
+                    Log.i(TAG, "Sleep interrupted, stopping...")
+                    running = false
+                    break
+                }
             }
         }
+        Log.d(TAG, "Connection loop exited")
     }
 
     private fun connect() {

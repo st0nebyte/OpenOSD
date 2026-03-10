@@ -11,9 +11,6 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 private const val TAG = "OSDService"
 private const val CH  = "openosd_prefs"
@@ -28,7 +25,6 @@ class OSDService : Service() {
     private val handler    = Handler(Looper.getMainLooper())
     private var client:    IAVRClient? = null
     private var hideTimer: Runnable?  = null
-    private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
