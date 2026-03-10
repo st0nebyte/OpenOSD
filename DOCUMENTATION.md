@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpenOSD provides a modern, minimal on-screen display (OSD) overlay for Denon AVR receivers on Android TV. The OSD shows real-time volume, source, and audio information with instant 0ms lag using Telnet push updates.
+OpenOSD provides a modern, minimal on-screen display (OSD) overlay for Denon AVR receivers on Android TV. The OSD shows real-time volume, source, and audio information with automatic protocol detection (Telnet for 0ms lag, or HTTP fallback for maximum compatibility).
 
 ## Display Modes
 
@@ -74,6 +74,7 @@ Complete information including signal type, full audio format names, technical d
 
 **Features:**
 - All INFO features
+- **Custom source names** (e.g., "Fire TV" instead of "MPLAY")
 - **Full audio format names** (no abbreviations):
   - `DOLBY ATMOS`, `DOLBY HD MSTR`, `DTS:X MSTR`
   - `DOLBY HD+DS` (Dolby TrueHD + Dolby Surround Upmix)
@@ -280,10 +281,18 @@ All elements are consistently aligned:
 
 ## Technical Specifications
 
-### Telnet Protocol
+### Connection Protocols
+
+**Automatic Detection:**
+- Tries Telnet first (Port 23) for instant 0ms lag
+- Falls back to HTTP if Port 23 is blocked (~500ms lag)
+- Works out-of-the-box on all receivers
+
+**Telnet Protocol (Preferred):**
 - **Port:** 23 (TCP)
 - **Format:** ASCII text commands ending with `\r` (CR)
 - **Updates:** Push-based (instant, 0ms lag)
+- **Limitation:** Single connection only
 - **Commands Used:**
   - `PW?` - Query power status
   - `MV?` - Query master volume
@@ -297,6 +306,21 @@ All elements are consistently aligned:
   - `PSRSTR ?` - Query Audio Restorer
   - `VSAUDIO ?` - Query HDMI Audio Output routing
   - `ECO?` - Query ECO mode status
+
+**HTTP Protocol (Fallback):**
+- **Method:** XML polling
+- **Endpoints:**
+  - `/goform/formMainZone_MainZoneXmlStatus.xml` - Main zone status
+  - `/goform/formNetAudio_StatusXml.xml` - Network audio status
+  - `/SETUP/INPUTS/INPUTASSIGN/d_InputAssign.asp` - Source name mapping
+- **Polling Rate:** ~2-5 requests/second during updates
+- **Limitations:** None (unlimited connections)
+
+### Source Name Mapping
+- **Auto-sync:** Fetches custom source names from receiver's web UI
+- **Manual Config:** User can configure names in app settings
+- **Storage:** Persistent via SharedPreferences
+- **Default Mappings:** Falls back to readable names (MPLAY → "Media Player")
 
 ### Volume Format
 - **Range:** -80.0 to +18.0 dB (absolute)
@@ -370,7 +394,8 @@ Best for: Audio enthusiasts, troubleshooting, setup testing
 - Android 6.0+ (Marshmallow)
 - Overlay permission (granted via ADB on Fire TV)
 - Network access to AVR
-- Denon AVR with Telnet support (port 23)
+- Denon AVR with network control enabled
+- Port 23 (Telnet) optional for 0ms lag - HTTP fallback always works!
 
 ### Fire TV Setup
 Overlay permission must be granted via ADB:
@@ -396,22 +421,27 @@ adb shell appops set dev.st0nebyte.openosd SYSTEM_ALERT_WINDOW allow
    - Use EXTENDED mode for troubleshooting
 
 3. **Performance:**
-   - Telnet provides instant updates (0ms lag)
-   - No polling overhead
-   - Minimal battery impact (push-based)
+   - Telnet provides instant updates (0ms lag) when available
+   - HTTP fallback still very responsive (~500ms)
+   - Automatic protocol selection
+   - Minimal battery impact
 
 4. **Troubleshooting:**
    - Check AVR IP address is correct
-   - Verify port 23 is accessible (may require hardware reset on X-series)
-   - Confirm overlay permission is granted
-   - See connection status in notification
+   - Verify overlay permission is granted
+   - See connection status and protocol in notification
+   - Port 23 unlock optional for better performance (see TELNET.md)
 
 ---
 
 ## Version History
 
-### v1.0 (Current)
-- Telnet push updates (0ms lag)
+### v0.5.0 (Current)
+- **Automatic protocol detection** (Telnet → HTTP fallback)
+- **Custom source names** with auto-sync from receiver
+- **Seamless APK updates** (fixed signing key)
+- Telnet push updates (0ms lag when available)
+- HTTP fallback for maximum compatibility
 - Three display modes (STANDARD, INFO, EXTENDED)
 - Three scale options (SMALL, MEDIUM, LARGE)
 - Complete AVR state tracking
@@ -419,3 +449,4 @@ adb shell appops set dev.st0nebyte.openosd SYSTEM_ALERT_WINDOW allow
 - Consistent center-bottom alignment
 - Animated volume bar
 - Speaker configuration detection
+- Split OSD layout (volume bottom, info top-left)

@@ -2,28 +2,44 @@
 
 **Android TV overlay app that shows a modern, minimal OSD whenever you change volume on your Denon AVR.**
 
-No more looking at the receiver's tiny display — OpenOSD draws a clean, hardware-accelerated overlay directly on your TV with **instant 0ms lag** using Telnet push updates.
+No more looking at the receiver's tiny display — OpenOSD draws a clean, hardware-accelerated overlay directly on your TV with **instant 0ms lag** using Telnet push updates (or automatic HTTP fallback if Port 23 is blocked).
 
 ## Features
 
 ### Core Functionality
-- **Instant Updates:** Telnet push-based updates (0ms lag, no polling)
+- **Automatic Protocol Detection:**
+  - Tries Telnet first (0ms lag, instant push updates)
+  - Auto-falls back to HTTP if Port 23 blocked (~500ms polling)
+  - Works out-of-the-box on all receivers!
+- **Split OSD Layout:**
+  - **Volume OSD:** Always bottom-center, compact (200x36dp)
+  - **Info OSD:** Top-left, only in INFO/EXTENDED modes
+  - No more giant info box obscuring the screen during volume changes!
 - **Animated Volume Bar:** Smooth volume display with dB precision (0.5 dB steps)
 - **Three Display Modes:**
   - **STANDARD:** Minimal volume-only display
-  - **INFO:** Volume + input source + sound mode
-  - **EXTENDED:** Complete info with **visual speaker layout**, full audio format names, and technical details
+  - **INFO:** Volume (bottom) + input source + sound mode (top-left)
+  - **EXTENDED:** Complete info with **compact speaker layout**, full audio format names, and technical details
 - **Three Scale Options:** Small (75%), Medium (100%), Large (130%) for minimal screen coverage
+- **Custom Source Names:**
+  - Auto-syncs from receiver's web UI (MPLAY → "Fire TV", etc.)
+  - Manual configuration available
 - **Full Audio Format Names:** No abbreviations - shows complete format like "DOLBY ATMOS", "DTS:X MSTR", "DOLBY HD+DS"
-- **Visual Speaker Layout:** Overhead view showing active/inactive speakers in real-time (EXTENDED mode)
-- **Modern Design:** Glassy semi-transparent aesthetic with smooth animations
-- **Consistent Alignment:** Center-bottom positioning regardless of scale
+- **Compact Speaker Layout:** Box-style display (like original Denon OSD) showing active speakers grouped by position (EXTENDED mode)
+- **Modern Design:** Glassy light theme with smooth animations
 - **Mute Indicator:** Red text when muted
 
 ### Technical Features
+- **Dual Protocol Support:**
+  - Telnet (port 23): Push updates, 0ms lag, instant response
+  - HTTP fallback: Polling mode, ~500ms lag, works when Port 23 blocked
+  - Automatic detection and switching
+- **Source Name Sync:**
+  - Auto-fetches custom source names from receiver web UI
+  - Manual configuration available
+  - Persistent storage of custom names
 - Fully hardware-accelerated Canvas rendering — crisp at 4K/1080p
-- Telnet protocol (port 23) with push updates
-- **Visual speaker layout** with overhead view (active speakers highlighted)
+- **Compact speaker layout** with box-style grouping (like original Denon OSD)
 - **Full audio format names** (DOLBY ATMOS, DTS:X MSTR, DOLBY HD+DS, etc.)
 - Speaker configuration detection (2.0, 2.1, 5.1, 7.1, 5.1.2 Atmos, etc.)
 - Signal detection (HDMI, DIGITAL, ANALOG, ARC)
@@ -36,19 +52,22 @@ No more looking at the receiver's tiny display — OpenOSD draws a clean, hardwa
 - Works while any other app is running
 - Foreground service with persistent notification
 - No root required
+- Seamless APK updates (same signing key across versions)
 
 ## Supported Hardware
 
-**AV Receivers** (Telnet port 23):
-- Denon AVR-X1200W (tested ✓)
-- Denon AVR-X series with Telnet support
-  - **Note:** Port 23 may require hardware reset to unlock on some X-series models
-  - See [TELNET.md](TELNET.md) for setup instructions
+**AV Receivers:**
+- Denon AVR-X1200W (tested ✓ - Telnet + HTTP)
+- Denon AVR-X series with network support
+  - **Works out-of-the-box:** HTTP mode always works
+  - **Optional 0ms lag:** Unlock Port 23 for Telnet (see [TELNET.md](TELNET.md))
+  - **Single connection limit:** Only one Telnet client at a time (HTTP has no limit)
 
 **TV / Display devices:**
 - Android TV (Android 6.0+) ✓
 - Google TV ✓
 - Amazon Fire TV (sideload + ADB) ✓
+- Any Android device with overlay permissions (phones, tablets for testing)
 
 ## Installation
 
@@ -141,8 +160,14 @@ Technical details (DRC, Restorer, HDMI routing, ECO)
 
 ## How it Works
 
-OpenOSD uses the Denon Telnet protocol (port 23) for instant push-based updates:
+OpenOSD automatically detects the best connection method for your receiver:
 
+**Automatic Protocol Detection:**
+1. **Try Telnet first** (port 23) - Instant push-based updates with 0ms lag
+2. **Auto-fallback to HTTP** if Port 23 is blocked - Polling mode with ~500ms lag
+3. **Works out-of-the-box** - No manual configuration needed!
+
+**Telnet Mode (Preferred):**
 1. **Connection:** Opens TCP connection to AVR port 23
 2. **Initial Query:** Requests current state (power, volume, mute, source, mode, signal, speakers)
 3. **Push Updates:** AVR sends unsolicited updates whenever state changes (0ms lag)
@@ -150,11 +175,13 @@ OpenOSD uses the Denon Telnet protocol (port 23) for instant push-based updates:
 5. **Overlay:** Draws Canvas-based overlay via `WindowManager.TYPE_APPLICATION_OVERLAY`
 6. **Animation:** Smooth volume bar animation with fade-out after 3 seconds
 
-**Advantages over HTTP polling:**
-- Instant response (0ms lag vs 150-400ms polling delay)
-- No network overhead (push vs constant polling)
-- More efficient battery usage
-- Real-time synchronization
+**HTTP Mode (Fallback):**
+- Polls AVR XML status endpoints every 150-400ms
+- More compatible (works even if Port 23 is locked)
+- No single-connection limit
+- Still provides smooth OSD experience
+
+**Protocol Status:** Check the notification to see which protocol is active: "Verbunden ✓ (Telnet)" or "Verbunden ✓ (HTTP)"
 
 ## Troubleshooting
 
@@ -164,14 +191,14 @@ OpenOSD uses the Denon Telnet protocol (port 23) for instant push-based updates:
 - Ensure AVR is powered on
 - Check notification for connection status
 
-### Port 23 connection fails
-Some Denon X-series models have Telnet port 23 locked by default. See [TELNET.md](TELNET.md) for unlock instructions (requires hardware reset).
+### Port 23 locked (Telnet unavailable)
+**The app automatically handles this!** If Port 23 is blocked, OpenOSD will:
+1. Try Telnet for 5 seconds
+2. Automatically fall back to HTTP polling
+3. Show a toast: "Port 23 gesperrt - nutze HTTP (langsamer)"
+4. Continue working with ~500ms lag instead of 0ms
 
-Alternatively, you can modify `OSDService.kt` line 62 to use HTTP polling instead:
-```kotlin
-// Use HTTP polling instead of Telnet:
-client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
-```
+**Want 0ms lag?** Some Denon X-series models have Port 23 locked by default. See [TELNET.md](TELNET.md) for optional unlock instructions (requires hardware reset). This is purely for performance optimization - the app works fine without it!
 
 ### Fire TV overlay permission
 Fire TV requires ADB to grant overlay permission. Make sure you run:

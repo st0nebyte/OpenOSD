@@ -5,6 +5,15 @@
 - `3df0055` - Add visual speaker layout and full audio format names
 - `bb116f5` - Add extended display modes, scale options, and complete AVR state tracking
 
+**Update (2026-03-10):**
+Since this review, the following changes have been implemented:
+- ✅ Merged to `main` branch
+- ✅ Added automatic HTTP fallback (v0.5.0)
+- ✅ Implemented custom source name mapping with auto-sync
+- ✅ Fixed InterruptedException crashes
+- ✅ Added seamless APK updates via fixed signing key
+- 🐛 Critical bug from this review still needs verification/testing
+
 ---
 
 ## Executive Summary
