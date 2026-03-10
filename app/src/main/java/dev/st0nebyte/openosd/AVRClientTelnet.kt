@@ -38,6 +38,7 @@ private const val RECONNECT_DELAY_MS = 3000L  // Faster reconnect
  */
 class AVRClientTelnet(
     private val host: String,
+    private val context: android.content.Context,
     private val onUpdate: (AVRState, OSDTrigger) -> Unit,
     private val onConnected: (Boolean) -> Unit,
 ) : IAVRClient {
@@ -193,10 +194,11 @@ class AVRClientTelnet(
             }
 
             // Input Source: SIGAME, SIDVD, SITV, etc.
+            // Use user-configurable display names
             response.startsWith("SI") -> {
-                val source = response.substring(2).trim()
-                    .replace("BD", "BLU-RAY")  // BD → BLU-RAY for clarity
-                next = next.copy(inputSource = source)
+                val sourceCode = response.substring(2).trim()
+                val displayName = SourceNameMapping.getDisplayName(context, sourceCode)
+                next = next.copy(inputSource = displayName)
             }
 
             // Sound Mode: MSSTEREO, MSDIRECT, MSDOLBY SURROUND, etc.

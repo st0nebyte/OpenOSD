@@ -66,7 +66,7 @@ class OSDService : Service() {
         //   See TELNET.md for setup instructions
 
         // Using Telnet for instant push updates
-        client = AVRClientTelnet(host, ::onUpdate, ::onConnected).also { it.start() }
+        client = AVRClientTelnet(host, this, ::onUpdate, ::onConnected).also { it.start() }
         // HTTP polling fallback:
         // client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
 

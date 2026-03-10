@@ -210,6 +210,10 @@ class MainActivity : Activity() {
         root.addView(makeButton("Grant Overlay Permission", Color.parseColor("#607D8B")) {
             handleOverlayPermission()
         })
+        root.addView(space(12))
+        root.addView(makeButton("Configure Source Names", Color.parseColor("#5E7A87")) {
+            showSourceNameDialog()
+        })
 
         root.addView(space(32))
 
@@ -300,6 +304,58 @@ class MainActivity : Activity() {
                 "Then press Start OSD."
             )
             .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showSourceNameDialog() {
+        val sourceCodes = SourceNameMapping.getAllSourceCodes()
+        val sourceNames = sourceCodes.map { code ->
+            "$code: ${SourceNameMapping.getDisplayName(this, code)}"
+        }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Configure Source Names")
+            .setItems(sourceNames) { _, which ->
+                val selectedCode = sourceCodes[which]
+                showEditSourceNameDialog(selectedCode)
+            }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showEditSourceNameDialog(sourceCode: String) {
+        val currentName = SourceNameMapping.getDisplayName(this, sourceCode)
+        val input = EditText(this).apply {
+            setText(currentName)
+            hint = "Display name"
+            setTextColor(TEXT_MAIN)
+            setHintTextColor(TEXT_DIM)
+            background = makeRoundedBg(BG_CARD, BORDER, dp(8f))
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setSingleLine()
+        }
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(12), dp(20), dp(12))
+            addView(input)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Edit Source: $sourceCode")
+            .setView(container)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotBlank()) {
+                    SourceNameMapping.setDisplayName(this, sourceCode, newName)
+                    Toast.makeText(this, "Saved: $sourceCode → $newName", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNeutralButton("Reset to Default") { _, _ ->
+                SourceNameMapping.resetToDefault(this, sourceCode)
+                Toast.makeText(this, "Reset to default", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
