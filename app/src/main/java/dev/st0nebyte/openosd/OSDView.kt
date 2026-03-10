@@ -8,13 +8,9 @@ import android.view.animation.DecelerateInterpolator
 import kotlin.math.roundToInt
 
 /**
- * Canvas-drawn OSD overlay.
- *
- * COMPACT mode (volume / mute): thin bar with speaker icon + gradient fill + dB label
- * FULL mode   (source / mode / ECO): complete Denon-style panel
- *
- * All geometry is derived from dp (density-independent) values converted via [dp].
- * This ensures pixel-perfect sharpness on 4K displays.
+ * Modern split OSD overlay:
+ * - Volume: always bottom-center (compact)
+ * - Info: top-left only when INFO/EXTENDED mode (compact like Denon original)
  */
 class OSDView(context: Context) : View(context) {
 
@@ -22,7 +18,6 @@ class OSDView(context: Context) : View(context) {
     var displayMode: OSDDisplayMode = OSDDisplayMode.STANDARD
     var scale: OSDScale = OSDScale.MEDIUM
 
-    // Animated volume fill
     private var animVol: Float = 0f
     private var volAnim: ValueAnimator? = null
 
@@ -36,135 +31,73 @@ class OSDView(context: Context) : View(context) {
         return v * density * scaleFactor
     }
 
-    // ── Glassy Modern Palette ─────────────────────────────────────
-    private val BG        = Color.parseColor("#CC0A0F14")  // 80% opaque, very dark blue-grey
-    private val BORDER    = Color.parseColor("#18FFFFFF")  // Subtle white border (10% opacity)
-    private val ACCENT    = Color.parseColor("#60A0C0E0")  // Soft blue-white accent (38% opacity)
-    private val TEXT      = Color.parseColor("#E5FFFFFF")  // Off-white text (90% opacity)
-    private val TEXT_DIM  = Color.parseColor("#80FFFFFF")  // Dimmed text (50% opacity)
-    private val TEXT_MUTE = Color.parseColor("#D0FF6060")  // Soft red for mute (82% opacity)
-    private val BAR_BG    = Color.parseColor("#18FFFFFF")  // Subtle bar background
-    private val BAR_FILL  = Color.parseColor("#90B0D0F0")  // Soft blue-white fill (56% opacity)
-    private val SEPARATOR = Color.parseColor("#12FFFFFF")  // Very subtle separator
+    // ── Modern Light Colors ──
+    private val BG        = Color.parseColor("#CC0A0F14")
+    private val BORDER    = Color.parseColor("#18FFFFFF")
+    private val ACCENT    = Color.parseColor("#60A0C0E0")
+    private val TEXT      = Color.parseColor("#E5FFFFFF")
+    private val TEXT_DIM  = Color.parseColor("#80FFFFFF")
+    private val TEXT_MUTE = Color.parseColor("#D0FF6060")
+    private val BAR_BG    = Color.parseColor("#18FFFFFF")
+    private val BAR_FILL  = Color.parseColor("#90B0D0F0")
 
-    // ── Paints (cached for performance) ──────────────────────────
-    private fun makePaint(block: Paint.() -> Unit) = Paint(Paint.ANTI_ALIAS_FLAG).apply(block)
-
-    private val pBg     = makePaint { style = Paint.Style.FILL; color = BG }
-    private val pBorder = makePaint { style = Paint.Style.STROKE; strokeWidth = dp(1f); color = BORDER }
-
-    // Reusable paints (avoid allocation on every draw)
-    private val pBarBg     = makePaint { style = Paint.Style.FILL; color = BAR_BG }
-    private val pBarFill   = makePaint { style = Paint.Style.FILL; color = BAR_FILL }
-    private val pText      = makePaint { typeface = Typeface.DEFAULT; textAlign = Paint.Align.LEFT }
-    private val pTextDim   = makePaint { typeface = Typeface.DEFAULT; color = TEXT_DIM }
-    private val pTextCenter = makePaint { typeface = Typeface.DEFAULT; textAlign = Paint.Align.CENTER; color = TEXT_DIM }
-    private val pSpeakerActive = makePaint { style = Paint.Style.FILL; color = ACCENT }
-    private val pSpeakerInactive = makePaint { style = Paint.Style.FILL; color = Color.parseColor("#10FFFFFF") }
-    private val pSpeakerText = makePaint { typeface = Typeface.MONOSPACE; textAlign = Paint.Align.CENTER }
-    private val pListener = makePaint { style = Paint.Style.STROKE; strokeWidth = dp(1f); color = Color.parseColor("#30FFFFFF") }
-
-    private val rf = RectF()
-
-    // ── Animation ─────────────────────────────────────────────────
+    // ── Cached Paints ──
+    private val pBg       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BG }
+    private val pBorder   = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(1f); color = BORDER }
+    private val pBarBg    = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BAR_BG }
+    private val pBarFill  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BAR_FILL }
+    private val pText     = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT }
+    private val pSpeaker  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val rf        = RectF()
 
     fun animateVolume(target: Float) {
         volAnim?.cancel()
         volAnim = ValueAnimator.ofFloat(animVol, target).apply {
-            duration = 120  // Faster animation for smoother feel with 150ms polling
+            duration = 120
             interpolator = DecelerateInterpolator()
             addUpdateListener { animVol = it.animatedValue as Float; invalidate() }
         }.also { it.start() }
     }
 
-    // ── Draw ──────────────────────────────────────────────────────
-
     override fun onDraw(canvas: Canvas) {
-        when (displayMode) {
-            OSDDisplayMode.STANDARD -> drawVolumeCompact(canvas)
-            OSDDisplayMode.INFO -> drawVolumeWithInfo(canvas)
-            OSDDisplayMode.EXTENDED -> drawVolumeExtended(canvas)
+        // Always draw volume OSD at bottom
+        drawVolumeOSD(canvas)
+
+        // Draw info OSD at top-left only if INFO or EXTENDED mode
+        if (displayMode == OSDDisplayMode.INFO || displayMode == OSDDisplayMode.EXTENDED) {
+            drawInfoOSD(canvas)
         }
     }
 
-    // ── Volume OSD (tight & compact) ──────────────────────────────
+    // ── Volume OSD (bottom-center, compact) ──────────────────────
+    private fun drawVolumeOSD(canvas: Canvas) {
+        val w = dp(200f)  // Compact width
+        val h = dp(36f)   // Compact height
+        val x = (width - w) / 2f
+        val y = height - dp(80f)  // 80dp from bottom
 
-    private fun drawVolumeCompact(canvas: Canvas) {
-        val w = width.toFloat(); val h = height.toFloat()
-        val r = dp(8f)
-
-        // Glassy background
-        rf.set(0f, 0f, w, h)
-        canvas.drawRoundRect(rf, r, r, pBg)
-        canvas.drawRoundRect(rf, r, r, pBorder)
+        // Background
+        rf.set(x, y, x + w, y + h)
+        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBg)
+        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBorder)
 
         val pad = dp(12f)
-        val midY = h / 2f
 
-        // VOL / MUTE label (compact)
-        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
-        pTextDim.textSize = dp(10f)
-        pTextDim.textAlign = Paint.Align.LEFT
-        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, midY + dp(3.5f), pTextDim)
-
-        // Volume bar (tighter layout)
-        val barX = pad + dp(32f)
-        val barW = w - barX - dp(48f)
-        val barH = dp(10f)
-        val barY = midY - barH / 2f
-
-        // Bar background
-        rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, pBarBg)
-
-        // Bar fill
-        val fillW = (barW * animVol).coerceAtLeast(0f)
-        if (fillW > 2f) {
-            rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, pBarFill)
-        }
-
-        // Volume value (compact)
-        pText.color = TEXT
-        pText.textSize = dp(15f)
+        // VOL/MUTE label
+        pText.color = if (state.muted) TEXT_MUTE else TEXT_DIM
+        pText.textSize = dp(9f)
         pText.textAlign = Paint.Align.LEFT
-        canvas.drawText(state.volumeString, barX + barW + dp(6f), midY + dp(5f), pText)
-    }
-
-    // ── Volume OSD with Info (source + sound mode) ────────────────
-
-    private fun drawVolumeWithInfo(canvas: Canvas) {
-        val w = width.toFloat(); val h = height.toFloat()
-        val r = dp(8f)
-
-        // Glassy background
-        rf.set(0f, 0f, w, h)
-        canvas.drawRoundRect(rf, r, r, pBg)
-        canvas.drawRoundRect(rf, r, r, pBorder)
-
-        val pad = dp(12f)
-        val line1Y = h * 0.35f  // First line: volume bar
-        val line2Y = h * 0.72f  // Second line: info
-
-        // ── Line 1: VOL / MUTE + Bar + Value ──────────────────────
-
-        // VOL / MUTE label
-        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
-        pTextDim.textSize = dp(10f)
-        pTextDim.textAlign = Paint.Align.LEFT
-        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), pTextDim)
+        canvas.drawText(if (state.muted) "MUTE" else "VOL", x + pad, y + dp(13f), pText)
 
         // Volume bar
-        val barX = pad + dp(32f)
-        val barW = w - barX - dp(48f)
-        val barH = dp(10f)
-        val barY = line1Y - barH / 2f
+        val barX = x + pad + dp(38f)
+        val barW = w - pad - dp(38f) - dp(42f)
+        val barH = dp(8f)
+        val barY = y + (h - barH) / 2f
 
-        // Bar background
         rf.set(barX, barY, barX + barW, barY + barH)
         canvas.drawRect(rf, pBarBg)
 
-        // Bar fill
         val fillW = (barW * animVol).coerceAtLeast(0f)
         if (fillW > 2f) {
             rf.set(barX, barY, barX + fillW, barY + barH)
@@ -173,222 +106,136 @@ class OSDView(context: Context) : View(context) {
 
         // Volume value
         pText.color = TEXT
-        pText.textSize = dp(15f)
+        pText.textSize = dp(13f)
+        pText.textAlign = Paint.Align.RIGHT
+        canvas.drawText(state.volumeString, x + w - pad, y + dp(23f), pText)
+    }
+
+    // ── Info OSD (top-left, compact like Denon original) ─────────
+    private fun drawInfoOSD(canvas: Canvas) {
+        val x = dp(24f)
+        val y = dp(24f)
+        val w = dp(280f)
+        var currentY = y
+
+        // Background for entire info block
+        val blockHeight = dp(if (displayMode == OSDDisplayMode.EXTENDED) 140f else 70f)
+        rf.set(x, y, x + w, y + blockHeight)
+        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBg)
+        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBorder)
+
+        val pad = dp(12f)
+        currentY += dp(16f)
+
+        // Source + Sound Mode
+        pText.color = TEXT
+        pText.textSize = dp(11f)
         pText.textAlign = Paint.Align.LEFT
-        canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), pText)
 
-        // ── Line 2: Input Source • Sound Mode ─────────────────────
-
-        val infoText = buildString {
+        val line1 = buildString {
             state.inputSource?.let { append(it) }
             if (state.inputSource != null && state.soundMode != null) append(" • ")
             state.soundMode?.let { append(it) }
         }
-
-        if (infoText.isNotBlank()) {
-            pTextCenter.textSize = dp(9f)
-            canvas.drawText(infoText, w / 2f, line2Y, pTextCenter)
-        }
-    }
-
-    // ── Volume OSD Extended (source + sound mode + signal + visual speaker layout) ──
-
-    private fun drawVolumeExtended(canvas: Canvas) {
-        val w = width.toFloat(); val h = height.toFloat()
-        val r = dp(8f)
-
-        // Glassy background
-        rf.set(0f, 0f, w, h)
-        canvas.drawRoundRect(rf, r, r, pBg)
-        canvas.drawRoundRect(rf, r, r, pBorder)
-
-        val pad = dp(12f)
-        val line1Y = h * 0.15f  // First line: volume bar
-        val line2Y = h * 0.32f  // Second line: source + mode (full names!)
-        val line3Y = h * 0.46f  // Third line: signal + format + tech info
-        val layoutCenterY = h * 0.72f  // Speaker layout center
-
-        // ── Line 1: VOL / MUTE + Bar + Value ──────────────────────
-
-        // VOL / MUTE label
-        pTextDim.color = if (state.muted) TEXT_MUTE else TEXT_DIM
-        pTextDim.textSize = dp(10f)
-        pTextDim.textAlign = Paint.Align.LEFT
-        canvas.drawText(if (state.muted) "MUTE" else "VOL", pad, line1Y + dp(3.5f), pTextDim)
-
-        // Volume bar
-        val barX = pad + dp(32f)
-        val barW = w - barX - dp(48f)
-        val barH = dp(10f)
-        val barY = line1Y - barH / 2f
-
-        // Bar background
-        rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, pBarBg)
-
-        // Bar fill
-        val fillW = (barW * animVol).coerceAtLeast(0f)
-        if (fillW > 2f) {
-            rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, pBarFill)
+        if (line1.isNotBlank()) {
+            canvas.drawText(line1, x + pad, currentY, pText)
+            currentY += dp(18f)
         }
 
-        // Volume value
-        pText.color = TEXT
-        pText.textSize = dp(15f)
-        pText.textAlign = Paint.Align.LEFT
-        canvas.drawText(state.volumeString, barX + barW + dp(6f), line1Y + dp(5f), pText)
+        // Signal + Digital + Tech Info
+        pText.textSize = dp(9f)
+        pText.color = TEXT_DIM
 
-        // ── Line 2: Input Source • Sound Mode (FULL NAMES) ────────
-
-        val infoText = buildString {
-            state.inputSource?.let { append(it) }
-            if (state.inputSource != null && state.soundMode != null) append(" • ")
-            state.soundMode?.let { append(it) }  // Full format names now!
-        }
-
-        if (infoText.isNotBlank()) {
-            pTextCenter.textSize = dp(8f)
-            canvas.drawText(infoText, w / 2f, line2Y, pTextCenter)
-        }
-
-        // ── Line 3: Signal • Format • Tech Info ───────────────────
-
-        val techText = buildString {
+        val line2 = buildString {
             state.signalDetect?.let { append(it) }
             if (state.signalDetect != null && state.digitalMode != null) append(" • ")
             state.digitalMode?.let { append(it) }
 
-            // Add technical features if active (only show non-defaults to reduce clutter)
-            val techFeatures = mutableListOf<String>()
-            state.drc?.let { if (it != "OFF" && it != "AUTO") techFeatures.add("DRC:$it") }  // Only non-default
-            state.audioRestorer?.let { if (it != "OFF") techFeatures.add("R:$it") }  // Abbreviate to save space
-            state.ecoMode?.let { if (it == "ON") techFeatures.add("ECO") }  // Only when active
-            state.hdmiAudioOut?.let { if (it == "TV") techFeatures.add("→TV") }  // Only when non-standard
+            val tech = mutableListOf<String>()
+            state.drc?.let { if (it != "OFF" && it != "AUTO") tech.add("DRC:$it") }
+            state.audioRestorer?.let { if (it != "OFF") tech.add("R:$it") }
+            state.ecoMode?.let { if (it == "ON") tech.add("ECO") }
+            state.hdmiAudioOut?.let { if (it == "TV") tech.add("→TV") }
 
-            if (techFeatures.isNotEmpty()) {
+            if (tech.isNotEmpty()) {
                 if (state.signalDetect != null || state.digitalMode != null) append(" • ")
-                append(techFeatures.joinToString(" "))
+                append(tech.joinToString(" "))
             }
         }
-
-        if (techText.isNotBlank()) {
-            pTextCenter.textSize = dp(7f)
-            canvas.drawText(techText, w / 2f, line3Y, pTextCenter)
+        if (line2.isNotBlank()) {
+            canvas.drawText(line2, x + pad, currentY, pText)
+            currentY += dp(20f)
         }
 
-        // ── Visual Speaker Layout ──────────────────────────────────
-
-        drawSpeakerLayout(canvas, w / 2f, layoutCenterY, w)
-    }
-
-    // ── Helper: Format speaker list ────────────────────────────────
-
-    private fun formatSpeakers(speakers: List<String>): String {
-        if (speakers.isEmpty()) return ""
-
-        val count = speakers.size
-        val hasSubwoofer = speakers.any { it == "SW" || it == "SW2" }
-        val hasFrontHeight = speakers.any { it.startsWith("FH") }
-
-        // Common configurations
-        // NOTE: Order matters! Check specific configs before generic ones
-        return when {
-            // Stereo
-            count == 2 && speakers.containsAll(listOf("FL", "FR")) -> "2.0"
-
-            // Stereo with sub
-            count == 3 && hasSubwoofer &&
-                speakers.containsAll(listOf("FL", "FR", "SW")) -> "2.1"
-
-            // 5.1 configurations
-            count == 6 && hasSubwoofer &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1"
-
-            // 5.1.2 Atmos (5.1 + 2 height) - CHECK BEFORE 7.1!
-            count == 8 && hasSubwoofer && hasFrontHeight &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) -> "5.1.2"
-
-            // 7.1 configurations (must be after 5.1.2 check)
-            count == 8 && hasSubwoofer &&
-                speakers.containsAll(listOf("FL", "FR", "C", "SW", "SL", "SR")) &&
-                (speakers.contains("SBL") || speakers.contains("SB")) -> "7.1"
-
-            // Custom: just list them
-            count <= 4 -> speakers.joinToString(" ")
-
-            // Many speakers: show count
-            else -> "$count speakers"
+        // Compact speaker display (EXTENDED mode only, like Denon original)
+        if (displayMode == OSDDisplayMode.EXTENDED && state.speakers.isNotEmpty()) {
+            drawCompactSpeakers(canvas, x + pad, currentY, w - pad * 2)
         }
     }
 
-    // ── Visual Speaker Layout (Overhead View) ──────────────────────
-
-    private fun drawSpeakerLayout(canvas: Canvas, centerX: Float, centerY: Float, layoutWidth: Float) {
+    // ── Compact Speaker Display (Box-style like Denon) ───────────
+    private fun drawCompactSpeakers(canvas: Canvas, x: Float, y: Float, maxWidth: Float) {
         val speakers = state.speakers
-        // Always show layout - active speakers highlighted, inactive speakers dimmed
+        if (speakers.isEmpty()) return
 
-        val scale = layoutWidth * 0.4f  // Speaker area size
-        val radius = dp(4f)  // Speaker circle radius
+        var currentY = y
 
-        // All possible speakers with their positions
-        SPEAKER_POSITIONS.forEach { (speakerCode, position) ->
-            val (relX, relY) = position
-            val x = centerX + relX * scale
-            val y = centerY + relY * scale
+        // Group speakers
+        val frontSpeakers = speakers.filter { it in listOf("FL", "FR", "C") }
+        val heightSpeakers = speakers.filter { it.startsWith("FH") || it.startsWith("T") }
+        val surroundSpeakers = speakers.filter { it in listOf("SL", "SR", "SBL", "SBR", "SB") }
+        val subs = speakers.filter { it.startsWith("SW") }
 
-            val isActive = speakers.contains(speakerCode)
-
-            // Draw speaker circle (reuse cached paints)
-            canvas.drawCircle(x, y, radius, if (isActive) pSpeakerActive else pSpeakerInactive)
-
-            // Draw speaker label (reuse cached paint)
-            pSpeakerText.textSize = dp(7f)
-            pSpeakerText.color = if (isActive) TEXT else TEXT_DIM
-            canvas.drawText(speakerCode, x, y - radius - dp(2f), pSpeakerText)
+        // Front Speakers
+        if (frontSpeakers.isNotEmpty()) {
+            pText.color = TEXT_DIM
+            pText.textSize = dp(7f)
+            pText.textAlign = Paint.Align.LEFT
+            canvas.drawText("FRONT SPEAKERS", x, currentY, pText)
+            currentY += dp(12f)
+            currentY = drawSpeakerRow(canvas, x, currentY, frontSpeakers)
+            currentY += dp(8f)
         }
 
-        // Draw listener position (center reference)
-        canvas.drawCircle(centerX, centerY, dp(3f), pListener)
+        // Height Speakers
+        if (heightSpeakers.isNotEmpty()) {
+            pText.color = TEXT_DIM
+            pText.textSize = dp(7f)
+            pText.textAlign = Paint.Align.LEFT
+            canvas.drawText("HEIGHT SPEAKERS", x, currentY, pText)
+            currentY += dp(12f)
+            currentY = drawSpeakerRow(canvas, x, currentY, heightSpeakers)
+            currentY += dp(8f)
+        }
+
+        // Surround + Subs (compact, one line)
+        val others = surroundSpeakers + subs
+        if (others.isNotEmpty()) {
+            currentY = drawSpeakerRow(canvas, x, currentY, others)
+        }
     }
 
-    companion object {
-        // Speaker positions (cached, relative to center, normalized -1.0 to 1.0)
-        private val SPEAKER_POSITIONS = mapOf(
-            // Front layer
-            "FL"  to Pair(-0.7f, -0.5f),   // Front Left
-            "FR"  to Pair(0.7f, -0.5f),    // Front Right
-            "C"   to Pair(0f, -0.6f),      // Center
+    private fun drawSpeakerRow(canvas: Canvas, startX: Float, y: Float, speakers: List<String>): Float {
+        var x = startX
+        val boxW = dp(24f)
+        val boxH = dp(16f)
+        val spacing = dp(6f)
 
-            // Surround layer
-            "SL"  to Pair(-0.8f, 0.3f),    // Surround Left
-            "SR"  to Pair(0.8f, 0.3f),     // Surround Right
-            "SBL" to Pair(-0.5f, 0.8f),    // Surround Back Left
-            "SBR" to Pair(0.5f, 0.8f),     // Surround Back Right
-            "SB"  to Pair(0f, 0.85f),      // Surround Back (single)
+        speakers.forEach { code ->
+            // Draw speaker box
+            pSpeaker.color = ACCENT
+            rf.set(x, y, x + boxW, y + boxH)
+            canvas.drawRoundRect(rf, dp(3f), dp(3f), pSpeaker)
 
-            // Subwoofer(s)
-            "SW"  to Pair(-0.3f, 0.6f),    // Subwoofer
-            "SW2" to Pair(0.3f, 0.6f),     // Subwoofer 2
+            // Draw label
+            pText.color = TEXT
+            pText.textSize = dp(8f)
+            pText.textAlign = Paint.Align.CENTER
+            canvas.drawText(code, x + boxW / 2, y + dp(11f), pText)
 
-            // Front Height (Atmos)
-            "FHL" to Pair(-0.7f, -0.75f),  // Front Height Left
-            "FHR" to Pair(0.7f, -0.75f),   // Front Height Right
+            x += boxW + spacing
+        }
 
-            // Top Front (Atmos)
-            "TFL" to Pair(-0.5f, -0.9f),   // Top Front Left
-            "TFR" to Pair(0.5f, -0.9f),    // Top Front Right
-
-            // Top Middle (Atmos)
-            "TML" to Pair(-0.5f, 0f),      // Top Middle Left
-            "TMR" to Pair(0.5f, 0f),       // Top Middle Right
-
-            // Dolby Atmos additional
-            "FDL" to Pair(-0.6f, -0.8f),   // Front Dolby Left
-            "FDR" to Pair(0.6f, -0.8f),    // Front Dolby Right
-            "SDL" to Pair(-0.8f, 0.5f),    // Surround Dolby Left
-            "SDR" to Pair(0.8f, 0.5f)      // Surround Dolby Right
-        )
+        return y + boxH + dp(4f)
     }
-
 }

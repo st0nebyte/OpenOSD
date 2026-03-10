@@ -122,27 +122,10 @@ class OSDService : Service() {
     }
 
     private fun makeParams(): WindowManager.LayoutParams {
-        val d = resources.displayMetrics.density
-
-        // Scale multiplier based on user preference
-        val scaleFactor = when (osd.scale) {
-            OSDScale.SMALL  -> 0.75f
-            OSDScale.MEDIUM -> 1.0f
-            OSDScale.LARGE  -> 1.3f
-        }
-
-        // Base dimensions adjusted for display mode
-        val baseHeight = when (osd.displayMode) {
-            OSDDisplayMode.STANDARD -> 40f   // Compact: 40dp
-            OSDDisplayMode.INFO -> 60f       // Taller: 60dp for 2 lines
-            OSDDisplayMode.EXTENDED -> 120f  // Tallest: 120dp for 3 lines + visual speaker layout
-        }
-
-        val baseWidth = 240f  // Base width: 240dp
-
+        // Full-screen overlay (but transparent) - allows drawing volume bottom + info top-left
         return WindowManager.LayoutParams(
-            (baseWidth * d * scaleFactor).toInt(),
-            (baseHeight * d * scaleFactor).toInt(),
+            WindowManager.LayoutParams.MATCH_PARENT,  // Full width
+            WindowManager.LayoutParams.MATCH_PARENT,  // Full height
             @Suppress("DEPRECATION")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -154,8 +137,7 @@ class OSDService : Service() {
                     or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL  // Centered at bottom
-            y = (60 * d).toInt()  // 60dp from bottom
+            gravity = Gravity.TOP or Gravity.START  // Full screen from top-left
         }
     }
 
