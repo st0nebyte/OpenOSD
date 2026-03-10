@@ -11,6 +11,9 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 private const val TAG = "OSDService"
 private const val CH  = "openosd_prefs"
@@ -25,6 +28,7 @@ class OSDService : Service() {
     private val handler    = Handler(Looper.getMainLooper())
     private var client:    IAVRClient? = null
     private var hideTimer: Runnable?  = null
+    private val serviceScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
@@ -58,6 +62,15 @@ class OSDService : Service() {
         toast("Verbinde mit $host…")
         prefs().edit().putString(KEY_HOST, host).apply()
         client?.stop()
+
+        // Auto-sync source names from receiver on service start
+        serviceScope.launch {
+            SourceNameSync.sync(this@OSDService, host) { success, count ->
+                if (success && count > 0) {
+                    Log.i(TAG, "Auto-synced $count source names from receiver")
+                }
+            }
+        }
 
         // Choose client implementation:
         // - AVRClient: HTTP polling (compatible, works everywhere)

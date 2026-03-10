@@ -11,8 +11,8 @@ android {
         applicationId = "dev.st0nebyte.openosd"
         minSdk        = 22
         targetSdk     = 36
-        versionCode   = 4
-        versionName   = "4.0"
+        versionCode   = 5
+        versionName   = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -29,7 +29,12 @@ android {
 }
 
 dependencies {
+    // Kotlin Coroutines for async operations
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
     // Unit testing
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.22")
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }

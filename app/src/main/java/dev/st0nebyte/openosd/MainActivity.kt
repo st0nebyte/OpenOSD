@@ -16,8 +16,13 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
+
+    private val lifecycleScope = CoroutineScope(Dispatchers.Main)
 
     private lateinit var etHost:        EditText
     private lateinit var spDisplayMode: Spinner
@@ -214,6 +219,10 @@ class MainActivity : Activity() {
         root.addView(makeButton("Configure Source Names", Color.parseColor("#5E7A87")) {
             showSourceNameDialog()
         })
+        root.addView(space(12))
+        root.addView(makeButton("Sync Names from Receiver", Color.parseColor("#4A7C59")) {
+            syncSourceNames()
+        })
 
         root.addView(space(32))
 
@@ -242,6 +251,8 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         updateStatus()
+        // Auto-sync source names from receiver on settings open
+        syncSourceNames(silent = true)
     }
 
     private fun updateStatus() {
@@ -438,5 +449,32 @@ class MainActivity : Activity() {
         val g = (Color.green(color) * factor).toInt().coerceIn(0, 255)
         val b = (Color.blue(color) * factor).toInt().coerceIn(0, 255)
         return Color.rgb(r, g, b)
+    }
+
+    private fun syncSourceNames(silent: Boolean = false) {
+        val host = etHost.text.toString().trim()
+        if (host.isBlank()) {
+            if (!silent) {
+                Toast.makeText(this, "Please enter IP address first", Toast.LENGTH_SHORT).show()
+            }
+            return
+        }
+
+        if (!silent) {
+            Toast.makeText(this, "Syncing source names...", Toast.LENGTH_SHORT).show()
+        }
+
+        lifecycleScope.launch {
+            SourceNameSync.sync(this@MainActivity, host) { success, count ->
+                runOnUiThread {
+                    if (success && count > 0) {
+                        val msg = "Synced $count source name${if (count != 1) "s" else ""}"
+                        Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+                    } else if (!success && !silent) {
+                        Toast.makeText(this@MainActivity, "Sync failed - check IP address", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
 }
