@@ -63,15 +63,6 @@ class OSDService : Service() {
         prefs().edit().putString(KEY_HOST, host).apply()
         client?.stop()
 
-        // Auto-sync source names from receiver on service start
-        serviceScope.launch {
-            SourceNameSync.sync(this@OSDService, host) { success, count ->
-                if (success && count > 0) {
-                    Log.i(TAG, "Auto-synced $count source names from receiver")
-                }
-            }
-        }
-
         // Choose client implementation:
         // - AVRClient: HTTP polling (compatible, works everywhere)
         // - AVRClientTelnet: Push updates via Telnet Port 23 (instant, 0ms lag)

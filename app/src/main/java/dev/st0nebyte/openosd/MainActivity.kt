@@ -251,8 +251,6 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         updateStatus()
-        // Auto-sync source names from receiver on settings open
-        syncSourceNames(silent = true)
     }
 
     private fun updateStatus() {
