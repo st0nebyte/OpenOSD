@@ -25,6 +25,7 @@ class OSDService : Service() {
     private val handler    = Handler(Looper.getMainLooper())
     private var client:    IAVRClient? = null
     private var hideTimer: Runnable?  = null
+    private var isClientConnected = false
 
     override fun onCreate() {
         super.onCreate()
@@ -59,16 +60,24 @@ class OSDService : Service() {
         prefs().edit().putString(KEY_HOST, host).apply()
         client?.stop()
 
-        // Choose client implementation:
-        // - AVRClient: HTTP polling (compatible, works everywhere)
+        // Auto-detect: Try Telnet first, fallback to HTTP if port 23 is blocked
         // - AVRClientTelnet: Push updates via Telnet Port 23 (instant, 0ms lag)
-        //   Requires: Port 23 unlocked (hardware reset on X-series)
-        //   See TELNET.md for setup instructions
+        //   Requires: Port 23 unlocked (hardware reset on X-series, see TELNET.md)
+        // - AVRClient: HTTP polling (compatible, works everywhere, ~500ms lag)
 
-        // Using Telnet for instant push updates
+        // Try Telnet connection first
+        isClientConnected = false
         client = AVRClientTelnet(host, this, ::onUpdate, ::onConnected).also { it.start() }
-        // HTTP polling fallback:
-        // client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
+
+        // After 5 seconds, check if Telnet connected - if not, fallback to HTTP
+        handler.postDelayed({
+            if (!isClientConnected && client is AVRClientTelnet) {
+                Log.i(TAG, "Telnet failed (Port 23 blocked), switching to HTTP fallback...")
+                toast("Port 23 gesperrt - nutze HTTP (langsamer)")
+                client?.stop()
+                client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
+            }
+        }, 5000)
 
         return START_STICKY
     }
@@ -85,7 +94,9 @@ class OSDService : Service() {
     }
 
     private fun onConnected(connected: Boolean) {
-        notify(if (connected) "Verbunden ✓" else "Verbinde…")
+        isClientConnected = connected
+        val protocol = if (client is AVRClientTelnet) "Telnet" else "HTTP"
+        notify(if (connected) "Verbunden ✓ ($protocol)" else "Verbinde…")
     }
 
     private fun show(timeoutMs: Long) {
