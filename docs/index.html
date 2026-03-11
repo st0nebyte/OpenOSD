@@ -453,9 +453,9 @@
         function drawInfoOSD(displayMode, scaleFactor) {
             const x = dp(24, scaleFactor);
             const y = dp(24, scaleFactor);
-            const w = dp(240, scaleFactor);  // Kompakter: 280 -> 240
-            const blockHeight = dp(displayMode === 'EXTENDED' ? 100 : 60, scaleFactor);  // Viel kompakter!
-            const radius = dp(12, scaleFactor);
+            const w = dp(220, scaleFactor);  // Noch kompakter für Grid-Layout
+            const blockHeight = dp(displayMode === 'EXTENDED' ? 110 : 50, scaleFactor);  // Angepasst an Grid-Höhe
+            const radius = dp(10, scaleFactor);
 
             // 1. Outer glow/shadow (glassmorphism depth)
             ctx.shadowColor = COLORS.SHADOW;
@@ -494,30 +494,23 @@
                          w - dp(2, scaleFactor), blockHeight - dp(2, scaleFactor), radius - dp(1, scaleFactor));
             ctx.stroke();
 
-            const pad = dp(10, scaleFactor);  // Kleinerer Padding
-            let currentY = y + dp(12, scaleFactor);  // Weniger Abstand oben
+            const pad = dp(8, scaleFactor);  // Minimal padding
+            let currentY = y + dp(10, scaleFactor);  // Minimal top gap
 
-            // Source + Sound Mode - kompakter
+            // Source + Sound Mode - eine Zeile, kompakt
             ctx.fillStyle = COLORS.TEXT;
-            ctx.font = `600 ${dp(11, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.font = `600 ${dp(10, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText('Fire TV • DOLBY ATMOS', x + pad, currentY);
-            currentY += dp(16, scaleFactor);  // Weniger Abstand
+            currentY += dp(14, scaleFactor);  // Minimal gap
 
-            // Signal + Digital + Tech Info - nur wenn nicht OFF
-            const techInfo = [];
+            // Signal info - nur in EXTENDED
             if (displayMode === 'EXTENDED') {
-                // Nur wichtige Infos zeigen
-                techInfo.push('HDMI');
-                techInfo.push('AUTO');
-            }
-
-            if (techInfo.length > 0) {
                 ctx.fillStyle = COLORS.TEXT_DIM;
-                ctx.font = `500 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
-                ctx.fillText(techInfo.join(' • '), x + pad, currentY);
-                currentY += dp(16, scaleFactor);
+                ctx.font = `500 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.fillText('HDMI • AUTO', x + pad, currentY);
+                currentY += dp(14, scaleFactor);
             }
 
             // Compact speaker display (EXTENDED mode only)
@@ -527,46 +520,68 @@
         }
 
         function drawCompactSpeakers(x, y, maxWidth, scaleFactor) {
-            let currentY = y;
+            // Overhead-View Grid wie Denon Original
+            // Layout:
+            //     TFL  TFR     (Height Front)
+            //   FL  C  FR      (Front)
+            //   SL  ○  SR      (Surround, ○ = listener)
+            //      SW          (Subwoofer)
 
-            // Einfach alle Speaker in Reihen anzeigen - KEIN Label!
-            // Wie Denon Original: kompakt und direkt
-            currentY = drawSpeakerRow(x, currentY, ['FL', 'C', 'FR'], scaleFactor);
-            currentY += dp(5, scaleFactor);  // Weniger Abstand zwischen Reihen
-            currentY = drawSpeakerRow(x, currentY, ['SL', 'SR', 'SW'], scaleFactor);
-        }
-
-        function drawSpeakerRow(startX, y, speakers, scaleFactor) {
-            let x = startX;
-            const boxW = dp(22, scaleFactor);  // Etwas kleiner
-            const boxH = dp(14, scaleFactor);  // Etwas kleiner
-            const spacing = dp(4, scaleFactor);  // Weniger Abstand
+            const boxW = dp(20, scaleFactor);
+            const boxH = dp(13, scaleFactor);
+            const spacing = dp(4, scaleFactor);
             const radius = dp(3, scaleFactor);
 
-            speakers.forEach(code => {
-                // Clean speaker box - Apple style (no heavy glows)
+            const centerX = x + maxWidth / 2;
+            let currentY = y;
+
+            // Helper function to draw single speaker at position
+            const drawSpeaker = (code, posX, posY) => {
                 ctx.fillStyle = COLORS.ACCENT;
                 ctx.beginPath();
-                ctx.roundRect(x, y, boxW, boxH, radius);
+                ctx.roundRect(posX, posY, boxW, boxH, radius);
                 ctx.fill();
 
-                // Subtle border
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.lineWidth = dp(1, scaleFactor);
                 ctx.stroke();
 
-                // Clean white label - kleinere Schrift
                 ctx.fillStyle = COLORS.TEXT;
-                ctx.font = `700 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.font = `700 ${dp(7.5, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(code, x + boxW / 2, y + boxH / 2);
+                ctx.fillText(code, posX + boxW / 2, posY + boxH / 2);
+            };
 
-                x += boxW + spacing;
-            });
+            // Row 1: Height speakers (TFL, TFR)
+            drawSpeaker('TFL', centerX - boxW - spacing/2 - boxW/2, currentY);
+            drawSpeaker('TFR', centerX + spacing/2 + boxW/2, currentY);
+            currentY += boxH + spacing;
 
-            return y + boxH + dp(4, scaleFactor);
+            // Row 2: Front speakers (FL, C, FR)
+            drawSpeaker('FL', centerX - boxW - spacing - boxW, currentY);
+            drawSpeaker('C', centerX - boxW/2, currentY);
+            drawSpeaker('FR', centerX + spacing + boxW, currentY);
+            currentY += boxH + spacing;
+
+            // Row 3: Surround speakers (SL, SR) with listener position
+            drawSpeaker('SL', centerX - boxW - spacing - boxW, currentY);
+            drawSpeaker('SR', centerX + spacing + boxW, currentY);
+
+            // Listener position (○) in center
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = dp(1, scaleFactor);
+            ctx.beginPath();
+            ctx.arc(centerX, currentY + boxH/2, dp(3, scaleFactor), 0, Math.PI * 2);
+            ctx.stroke();
+
+            currentY += boxH + spacing;
+
+            // Row 4: Subwoofer (SW) centered
+            drawSpeaker('SW', centerX - boxW/2, currentY);
         }
+
+        // Removed - now using grid layout in drawCompactSpeakers
 
         function render() {
             const displayMode = displayModeSelect.value;
@@ -667,12 +682,12 @@
             if (displayMode === 'STANDARD') {
                 document.getElementById('infoSize').textContent = '—';
             } else if (displayMode === 'INFO') {
-                const infoW = Math.round(240 * scaleFactor);
-                const infoH = Math.round(60 * scaleFactor);
+                const infoW = Math.round(220 * scaleFactor);
+                const infoH = Math.round(50 * scaleFactor);
                 document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
             } else {
-                const infoW = Math.round(240 * scaleFactor);
-                const infoH = Math.round(100 * scaleFactor);
+                const infoW = Math.round(220 * scaleFactor);
+                const infoH = Math.round(110 * scaleFactor);
                 document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
             }
 
