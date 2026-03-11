@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenOSD - Interactive Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #4fc3f7 0%, #81d4fa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        select, input[type="range"] {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        select:hover, select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            border-color: #4fc3f7;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4fc3f7;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .preview-container {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tv-frame {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            border: 3px solid #333;
+            border-radius: 8px;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.1em;
+            color: #4fc3f7;
+            font-weight: 600;
+        }
+
+        .github-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .github-link a {
+            color: #4fc3f7;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 10px 20px;
+            border: 1px solid #4fc3f7;
+            border-radius: 6px;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .github-link a:hover {
+            background: #4fc3f7;
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenOSD Interactive Preview</h1>
+        <p class="subtitle">See exactly how the OSD will look on your TV - all display modes and scales</p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="displayMode">Display Mode</label>
+                <select id="displayMode">
+                    <option value="STANDARD">STANDARD - Volume only</option>
+                    <option value="INFO">INFO - Volume + Source/Mode</option>
+                    <option value="EXTENDED">EXTENDED - Full details + Speakers</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="scale">Scale</label>
+                <select id="scale">
+                    <option value="0.75">SMALL (75%)</option>
+                    <option value="1.0" selected>MEDIUM (100%)</option>
+                    <option value="1.3">LARGE (130%)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="volume">Volume: <span id="volumeValue">45</span></label>
+                <input type="range" id="volume" min="0" max="98" value="45">
+            </div>
+
+            <div class="control-group">
+                <label for="muted">
+                    <input type="checkbox" id="muted"> Muted
+                </label>
+            </div>
+        </div>
+
+        <div class="preview-container">
+            <div class="tv-frame" id="tvFrame">
+                <canvas id="osdCanvas" width="1920" height="1080"></canvas>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Resolution</div>
+                    <div class="stat-value">1920×1080</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Volume OSD Size</div>
+                    <div class="stat-value" id="volumeSize">200×36dp</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Info OSD Size</div>
+                    <div class="stat-value" id="infoSize">—</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Screen Coverage</div>
+                    <div class="stat-value" id="coverage">~1.5%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="github-link">
+            <a href="https://github.com/st0nebyte/OpenOSD" target="_blank">
+                ⭐ View on GitHub
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Constants from OSDView.kt
+        const COLORS = {
+            BG: '#CC0A0F14',
+            BORDER: '#18FFFFFF',
+            ACCENT: '#60A0C0E0',
+            TEXT: '#E5FFFFFF',
+            TEXT_DIM: '#80FFFFFF',
+            TEXT_MUTE: '#D0FF6060',
+            BAR_BG: '#18FFFFFF',
+            BAR_FILL: '#90B0D0F0'
+        };
+
+        const canvas = document.getElementById('osdCanvas');
+        const ctx = canvas.getContext('2d');
+        const density = 2; // Simulate Android density (mdpi = 1, xhdpi = 2, etc.)
+
+        // Controls
+        const displayModeSelect = document.getElementById('displayMode');
+        const scaleSelect = document.getElementById('scale');
+        const volumeSlider = document.getElementById('volume');
+        const volumeValueSpan = document.getElementById('volumeValue');
+        const mutedCheckbox = document.getElementById('muted');
+
+        function dp(value, scaleFactor) {
+            return value * density * scaleFactor;
+        }
+
+        function hexToRgba(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const a = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        function drawVolumeOSD(scaleFactor, volume, muted) {
+            const w = dp(200, scaleFactor);
+            const h = dp(36, scaleFactor);
+            const x = (canvas.width - w) / 2;
+            const y = canvas.height - dp(80, scaleFactor);
+
+            // Background
+            ctx.fillStyle = hexToRgba(COLORS.BG);
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, dp(8, scaleFactor));
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = hexToRgba(COLORS.BORDER);
+            ctx.lineWidth = dp(1, scaleFactor);
+            ctx.stroke();
+
+            const pad = dp(12, scaleFactor);
+
+            // VOL/MUTE label
+            ctx.fillStyle = muted ? hexToRgba(COLORS.TEXT_MUTE) : hexToRgba(COLORS.TEXT_DIM);
+            ctx.font = `${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(muted ? 'MUTE' : 'VOL', x + pad, y + dp(5, scaleFactor));
+
+            // Volume bar
+            const barX = x + pad + dp(38, scaleFactor);
+            const barW = w - pad - dp(38, scaleFactor) - dp(42, scaleFactor);
+            const barH = dp(8, scaleFactor);
+            const barY = y + (h - barH) / 2;
+
+            // Bar background
+            ctx.fillStyle = hexToRgba(COLORS.BAR_BG);
+            ctx.fillRect(barX, barY, barW, barH);
+
+            // Bar fill
+            const fillW = (barW * (volume / 98));
+            if (fillW > 2) {
+                ctx.fillStyle = hexToRgba(COLORS.BAR_FILL);
+                ctx.fillRect(barX, barY, fillW, barH);
+            }
+
+            // Volume value
+            ctx.fillStyle = hexToRgba(COLORS.TEXT);
+            ctx.font = `600 ${dp(13, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.textAlign = 'right';
+            const volValue = volume - 80; // Convert to dB
+            const volString = volValue % 1 === 0 ? volValue.toString() : volValue.toFixed(1);
+            ctx.fillText(volString, x + w - pad, y + dp(9, scaleFactor));
+        }
+
+        function drawInfoOSD(displayMode, scaleFactor) {
+            const x = dp(24, scaleFactor);
+            const y = dp(24, scaleFactor);
+            const w = dp(280, scaleFactor);
+            const blockHeight = dp(displayMode === 'EXTENDED' ? 140 : 70, scaleFactor);
+
+            // Background
+            ctx.fillStyle = hexToRgba(COLORS.BG);
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, blockHeight, dp(8, scaleFactor));
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = hexToRgba(COLORS.BORDER);
+            ctx.lineWidth = dp(1, scaleFactor);
+            ctx.stroke();
+
+            const pad = dp(12, scaleFactor);
+            let currentY = y + dp(16, scaleFactor);
+
+            // Source + Sound Mode
+            ctx.fillStyle = hexToRgba(COLORS.TEXT);
+            ctx.font = `500 ${dp(11, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Fire TV • DOLBY ATMOS', x + pad, currentY);
+            currentY += dp(18, scaleFactor);
+
+            // Signal + Digital + Tech Info
+            ctx.fillStyle = hexToRgba(COLORS.TEXT_DIM);
+            ctx.font = `${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.fillText('HDMI • AUTO • DRC:AUTO', x + pad, currentY);
+            currentY += dp(20, scaleFactor);
+
+            // Compact speaker display (EXTENDED mode only)
+            if (displayMode === 'EXTENDED') {
+                drawCompactSpeakers(x + pad, currentY, w - pad * 2, scaleFactor);
+            }
+        }
+
+        function drawCompactSpeakers(x, y, maxWidth, scaleFactor) {
+            let currentY = y;
+
+            // Front Speakers
+            ctx.fillStyle = hexToRgba(COLORS.TEXT_DIM);
+            ctx.font = `${dp(7, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText('FRONT SPEAKERS', x, currentY);
+            currentY += dp(12, scaleFactor);
+            currentY = drawSpeakerRow(x, currentY, ['FL', 'C', 'FR'], scaleFactor);
+            currentY += dp(8, scaleFactor);
+
+            // Surround + Sub
+            currentY = drawSpeakerRow(x, currentY, ['SL', 'SR', 'SW'], scaleFactor);
+        }
+
+        function drawSpeakerRow(startX, y, speakers, scaleFactor) {
+            let x = startX;
+            const boxW = dp(24, scaleFactor);
+            const boxH = dp(16, scaleFactor);
+            const spacing = dp(6, scaleFactor);
+
+            speakers.forEach(code => {
+                // Draw speaker box
+                ctx.fillStyle = hexToRgba(COLORS.ACCENT);
+                ctx.beginPath();
+                ctx.roundRect(x, y, boxW, boxH, dp(3, scaleFactor));
+                ctx.fill();
+
+                // Draw label
+                ctx.fillStyle = hexToRgba(COLORS.TEXT);
+                ctx.font = `600 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(code, x + boxW / 2, y + boxH / 2);
+
+                x += boxW + spacing;
+            });
+
+            return y + boxH + dp(4, scaleFactor);
+        }
+
+        function render() {
+            const displayMode = displayModeSelect.value;
+            const scaleFactor = parseFloat(scaleSelect.value);
+            const volume = parseInt(volumeSlider.value);
+            const muted = mutedCheckbox.checked;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background gradient (simulating TV content)
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw "Your Content Here" text
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.font = '48px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Your Content Here (1920×1080)', canvas.width / 2, canvas.height / 2);
+
+            // Always draw volume OSD
+            drawVolumeOSD(scaleFactor, volume, muted);
+
+            // Draw info OSD if INFO or EXTENDED mode
+            if (displayMode === 'INFO' || displayMode === 'EXTENDED') {
+                drawInfoOSD(displayMode, scaleFactor);
+            }
+
+            // Update stats
+            updateStats(displayMode, scaleFactor);
+        }
+
+        function updateStats(displayMode, scaleFactor) {
+            const volumeW = Math.round(200 * scaleFactor);
+            const volumeH = Math.round(36 * scaleFactor);
+            document.getElementById('volumeSize').textContent = `${volumeW}×${volumeH}dp`;
+
+            if (displayMode === 'STANDARD') {
+                document.getElementById('infoSize').textContent = '—';
+            } else if (displayMode === 'INFO') {
+                const infoW = Math.round(280 * scaleFactor);
+                const infoH = Math.round(70 * scaleFactor);
+                document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
+            } else {
+                const infoW = Math.round(280 * scaleFactor);
+                const infoH = Math.round(140 * scaleFactor);
+                document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
+            }
+
+            // Calculate screen coverage
+            const volumeArea = volumeW * volumeH;
+            let totalArea = volumeArea;
+            if (displayMode === 'INFO') {
+                totalArea += Math.round(280 * scaleFactor) * Math.round(70 * scaleFactor);
+            } else if (displayMode === 'EXTENDED') {
+                totalArea += Math.round(280 * scaleFactor) * Math.round(140 * scaleFactor);
+            }
+            const screenArea = 1920 * 1080;
+            const coverage = ((totalArea / screenArea) * 100).toFixed(1);
+            document.getElementById('coverage').textContent = `~${coverage}%`;
+        }
+
+        // Event listeners
+        displayModeSelect.addEventListener('change', render);
+        scaleSelect.addEventListener('change', render);
+        volumeSlider.addEventListener('input', () => {
+            volumeValueSpan.textContent = volumeSlider.value;
+            render();
+        });
+        mutedCheckbox.addEventListener('change', render);
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

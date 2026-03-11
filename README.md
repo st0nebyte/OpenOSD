@@ -117,6 +117,9 @@ Change the volume on your AVR — the OSD should appear instantly on your TV.
 
 ## Display Mode Examples
 
+> **🎮 [Try the Interactive Preview!](https://st0nebyte.github.io/OpenOSD/)**
+> See all display modes and scales in real-time - no installation needed!
+
 **Split OSD Layout - True to Scale:**
 All examples below show **MEDIUM scale (100%)** on a **1920×1080 Full HD TV**. Position and size are pixel-accurate based on actual code.
 
