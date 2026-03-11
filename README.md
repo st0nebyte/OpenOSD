@@ -127,87 +127,83 @@ See [DOCUMENTATION.md](DOCUMENTATION.md) for detailed visual examples and techni
 ### STANDARD Mode
 Shows only volume bar at bottom-center:
 
-<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
-  <!-- Volume Bar (bottom-center) -->
-  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
-    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
-      <span>VOL</span>
-      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
-        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
-      </div>
-      <span style="font-weight: 600;">45</span>
-    </div>
-  </div>
-  <!-- Label -->
-  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
-</div>
+```
+╔══════════════════════════════════════════════╗  ← Your TV Screen
+║                                              ║
+║                                              ║
+║          🎮 Your Content Here 🎬             ║
+║                                              ║
+║                                              ║
+║        ╭─────────────────────╮               ║  ← Volume OSD
+║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
+║        ╰─────────────────────╯               ║  Glassy, compact
+╚══════════════════════════════════════════════╝
+```
+
+**Design:** Glassy semi-transparent box • Blue gradient volume bar • Minimal screen coverage (~2%)
+
+---
 
 ### INFO Mode
 Adds info box at top-left with source and sound mode:
 
-<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
-  <!-- Info Box (top-left) -->
-  <div style="position: absolute; top: 20px; left: 20px; background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
-    <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500;">
-      GAME • DIRECT
-    </div>
-  </div>
-  <!-- Volume Bar (bottom-center) -->
-  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
-    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
-      <span>VOL</span>
-      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
-        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
-      </div>
-      <span style="font-weight: 600;">45</span>
-    </div>
-  </div>
-  <!-- Label -->
-  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
-</div>
+```
+╔══════════════════════════════════════════════╗  ← Your TV Screen
+║ ╭──────────────────╮                         ║  ← Info OSD
+║ │ GAME • DIRECT    │                         ║  (top-left)
+║ ╰──────────────────╯                         ║  Glassy box
+║                                              ║
+║          🎮 Your Content Here 🎬             ║
+║                                              ║
+║        ╭─────────────────────╮               ║  ← Volume OSD
+║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
+║        ╰─────────────────────╯               ║
+╚══════════════════════════════════════════════╝
+```
+
+**Info Shows:** Custom source name (e.g., "Fire TV") • Sound mode (e.g., DIRECT, STEREO)
+
+---
 
 ### EXTENDED Mode
 Complete technical info with speaker layout in top-left box:
 
-<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
-  <!-- Info Box (top-left) with speaker layout -->
-  <div style="position: absolute; top: 20px; left: 20px; background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); min-width: 220px;">
-    <!-- Source & Mode -->
-    <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500; margin-bottom: 6px;">
-      GAME • DOLBY ATMOS
-    </div>
-    <!-- Technical Details -->
-    <div style="color: rgba(255, 255, 255, 0.7); font-size: 11px; margin-bottom: 10px;">
-      HDMI • AUTO • DRC:AUTO
-    </div>
-    <!-- Speaker Layout -->
-    <div style="color: rgba(255, 255, 255, 0.85); font-size: 11px; font-family: 'Courier New', monospace; line-height: 1.6; text-align: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-      <div style="margin-bottom: 4px;">    <span style="color: #4fc3f7; font-weight: bold;">TFL</span>      <span style="color: #4fc3f7; font-weight: bold;">TFR</span></div>
-      <div style="margin-bottom: 4px;"> <span style="color: #4fc3f7; font-weight: bold;">FL</span>   <span style="color: #4fc3f7; font-weight: bold;">C</span>   <span style="color: #4fc3f7; font-weight: bold;">FR</span></div>
-      <div style="margin-bottom: 4px;"> <span style="color: #4fc3f7; font-weight: bold;">SL</span>   <span style="color: rgba(255, 255, 255, 0.4);">○</span>   <span style="color: #4fc3f7; font-weight: bold;">SR</span></div>
-      <div>     <span style="color: #4fc3f7; font-weight: bold;">SW</span></div>
-    </div>
-  </div>
-  <!-- Volume Bar (bottom-center) -->
-  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
-    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
-      <span>VOL</span>
-      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
-        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
-      </div>
-      <span style="font-weight: 600;">45</span>
-    </div>
-  </div>
-  <!-- Label -->
-  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
-</div>
+```
+╔══════════════════════════════════════════════╗  ← Your TV Screen
+║ ╭────────────────────────────╮               ║  ← Info OSD
+║ │ GAME • DOLBY ATMOS         │               ║  (top-left)
+║ │ HDMI • AUTO • DRC:AUTO     │               ║  Detailed info
+║ │ ─────────────────────────  │               ║
+║ │     TFL      TFR           │               ║  Speaker Layout
+║ │   FL   C   FR              │               ║  ● = active
+║ │   SL   ○   SR              │               ║  ○ = listener
+║ │       SW                   │               ║  ○ = inactive
+║ ╰────────────────────────────╯               ║
+║                                              ║
+║          🎮 Your Content Here 🎬             ║
+║                                              ║
+║        ╭─────────────────────╮               ║  ← Volume OSD
+║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
+║        ╰─────────────────────╯               ║
+╚══════════════════════════════════════════════╝
+```
+
+**Extended Shows:**
+- **Full audio format names:** DOLBY ATMOS, DTS:X MSTR, DOLBY HD+DS (no abbreviations!)
+- **Speaker layout:** Visual overhead view showing active speakers (5.1, 7.1, Atmos, etc.)
+- **Signal info:** HDMI, DIGITAL, ANALOG, ARC
+- **Technical details:** DRC, Audio Restorer, HDMI routing, ECO mode
+
+**Volume Bar Stays Bottom:** Even in EXTENDED mode, volume changes never obscure your content!
+
+---
 
 **Key Features:**
-- **Glassy Design:** Semi-transparent with backdrop blur
-- **Volume Bar:** Always bottom-center, never blocks content
-- **Info Box:** Appears top-left only when needed
-- **Speaker Layout:** Active speakers highlighted in blue
-- **Full Format Names:** DOLBY ATMOS, DTS:X MSTR, etc.
+- 🪟 **Glassy Design:** Semi-transparent with backdrop blur effect
+- 📊 **Volume Bar:** Always bottom-center, never blocks content (200×36dp)
+- 📍 **Info Box:** Appears top-left only when needed
+- 🔊 **Speaker Layout:** Active speakers highlighted, inactive speakers dimmed
+- 🎵 **Full Format Names:** DOLBY ATMOS, DTS:X MSTR, etc. (no abbreviations!)
 
 ## How it Works
 
