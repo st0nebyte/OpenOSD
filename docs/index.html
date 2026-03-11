@@ -41,9 +41,11 @@
         }
 
         .controls {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 16px;
             padding: 20px;
             margin-bottom: 30px;
             display: flex;
@@ -51,6 +53,8 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+                        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
         }
 
         .control-group {
@@ -66,20 +70,28 @@
         }
 
         select, input[type="range"] {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             color: #fff;
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1em;
             cursor: pointer;
             min-width: 150px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         select:hover, select:focus {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.18);
             outline: none;
-            border-color: #4fc3f7;
+            border-color: rgba(79, 195, 247, 0.6);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
+                        0 0 0 1px rgba(79, 195, 247, 0.4) inset,
+                        0 0 20px rgba(79, 195, 247, 0.2);
         }
 
         select option {
@@ -102,12 +114,16 @@
         }
 
         .preview-container {
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
             padding: 20px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
         }
 
         .tv-frame {
@@ -142,10 +158,14 @@
         }
 
         .stat {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             padding: 10px 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
+                        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
         }
 
         .stat-label {
@@ -169,16 +189,25 @@
             color: #4fc3f7;
             text-decoration: none;
             font-weight: 500;
-            padding: 10px 20px;
-            border: 1px solid #4fc3f7;
-            border-radius: 6px;
+            padding: 12px 24px;
+            background: rgba(79, 195, 247, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(79, 195, 247, 0.3);
+            border-radius: 12px;
             display: inline-block;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(79, 195, 247, 0.1),
+                        0 0 0 1px rgba(79, 195, 247, 0.2) inset;
         }
 
         .github-link a:hover {
-            background: #4fc3f7;
-            color: #1a1a2e;
+            background: rgba(79, 195, 247, 0.25);
+            border-color: rgba(79, 195, 247, 0.6);
+            box-shadow: 0 8px 32px rgba(79, 195, 247, 0.3),
+                        0 0 0 1px rgba(79, 195, 247, 0.4) inset,
+                        0 0 40px rgba(79, 195, 247, 0.2);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -253,16 +282,19 @@
     </div>
 
     <script>
-        // Constants from OSDView.kt
+        // Apple Glassmorphism Colors (upgraded from OSDView.kt)
         const COLORS = {
-            BG: '#CC0A0F14',
-            BORDER: '#18FFFFFF',
-            ACCENT: '#60A0C0E0',
-            TEXT: '#E5FFFFFF',
-            TEXT_DIM: '#80FFFFFF',
-            TEXT_MUTE: '#D0FF6060',
-            BAR_BG: '#18FFFFFF',
-            BAR_FILL: '#90B0D0F0'
+            BG: 'rgba(20, 25, 35, 0.7)',           // Lighter, more transparent
+            BG_GLOW: 'rgba(79, 195, 247, 0.05)',   // Subtle blue glow
+            BORDER: 'rgba(255, 255, 255, 0.25)',   // Brighter border
+            BORDER_INNER: 'rgba(255, 255, 255, 0.1)', // Inner highlight
+            ACCENT: 'rgba(79, 195, 247, 0.6)',     // Brighter accent
+            TEXT: 'rgba(255, 255, 255, 0.95)',     // Slightly brighter text
+            TEXT_DIM: 'rgba(255, 255, 255, 0.6)',  // Brighter dim text
+            TEXT_MUTE: 'rgba(255, 96, 96, 0.9)',   // Brighter mute
+            BAR_BG: 'rgba(255, 255, 255, 0.15)',   // Brighter bar background
+            BAR_FILL: 'rgba(129, 212, 250, 0.8)',  // Brighter, more vibrant fill
+            SHADOW: 'rgba(0, 0, 0, 0.3)'           // Outer shadow
         };
 
         const canvas = document.getElementById('osdCanvas');
@@ -293,51 +325,104 @@
             const h = dp(36, scaleFactor);
             const x = (canvas.width - w) / 2;
             const y = canvas.height - dp(80, scaleFactor);
+            const radius = dp(10, scaleFactor);
 
-            // Background
-            ctx.fillStyle = hexToRgba(COLORS.BG);
+            // 1. Outer glow/shadow (glassmorphism depth)
+            ctx.shadowColor = COLORS.SHADOW;
+            ctx.shadowBlur = dp(20, scaleFactor);
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = dp(8, scaleFactor);
+
+            ctx.fillStyle = COLORS.BG;
             ctx.beginPath();
-            ctx.roundRect(x, y, w, h, dp(8, scaleFactor));
+            ctx.roundRect(x, y, w, h, radius);
             ctx.fill();
 
-            // Border
-            ctx.strokeStyle = hexToRgba(COLORS.BORDER);
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 2. Subtle blue glow (glassmorphism accent)
+            ctx.fillStyle = COLORS.BG_GLOW;
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, radius);
+            ctx.fill();
+
+            // 3. Outer border
+            ctx.strokeStyle = COLORS.BORDER;
+            ctx.lineWidth = dp(1.5, scaleFactor);
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, radius);
+            ctx.stroke();
+
+            // 4. Inner highlight (top edge for glass effect)
+            ctx.strokeStyle = COLORS.BORDER_INNER;
             ctx.lineWidth = dp(1, scaleFactor);
+            ctx.beginPath();
+            ctx.roundRect(x + dp(1, scaleFactor), y + dp(1, scaleFactor),
+                         w - dp(2, scaleFactor), h - dp(2, scaleFactor), radius - dp(1, scaleFactor));
             ctx.stroke();
 
             const pad = dp(12, scaleFactor);
 
-            // VOL/MUTE label
-            ctx.fillStyle = muted ? hexToRgba(COLORS.TEXT_MUTE) : hexToRgba(COLORS.TEXT_DIM);
-            ctx.font = `${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            // VOL/MUTE label with slight glow
+            ctx.fillStyle = muted ? COLORS.TEXT_MUTE : COLORS.TEXT_DIM;
+            ctx.font = `500 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
+
+            if (muted) {
+                ctx.shadowColor = 'rgba(255, 96, 96, 0.5)';
+                ctx.shadowBlur = dp(4, scaleFactor);
+            }
             ctx.fillText(muted ? 'MUTE' : 'VOL', x + pad, y + dp(5, scaleFactor));
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
 
             // Volume bar
             const barX = x + pad + dp(38, scaleFactor);
             const barW = w - pad - dp(38, scaleFactor) - dp(42, scaleFactor);
             const barH = dp(8, scaleFactor);
             const barY = y + (h - barH) / 2;
+            const barRadius = dp(4, scaleFactor);
 
-            // Bar background
-            ctx.fillStyle = hexToRgba(COLORS.BAR_BG);
-            ctx.fillRect(barX, barY, barW, barH);
+            // Bar background (glassy)
+            ctx.fillStyle = COLORS.BAR_BG;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, barRadius);
+            ctx.fill();
 
-            // Bar fill
+            // Bar fill with gradient (glassmorphism)
             const fillW = (barW * (volume / 98));
             if (fillW > 2) {
-                ctx.fillStyle = hexToRgba(COLORS.BAR_FILL);
-                ctx.fillRect(barX, barY, fillW, barH);
+                const gradient = ctx.createLinearGradient(barX, barY, barX + fillW, barY);
+                gradient.addColorStop(0, 'rgba(79, 195, 247, 0.9)');
+                gradient.addColorStop(1, 'rgba(129, 212, 250, 0.9)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, fillW, barH, barRadius);
+                ctx.fill();
+
+                // Subtle glow on bar
+                ctx.shadowColor = 'rgba(79, 195, 247, 0.4)';
+                ctx.shadowBlur = dp(6, scaleFactor);
+                ctx.fill();
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
             }
 
-            // Volume value
-            ctx.fillStyle = hexToRgba(COLORS.TEXT);
+            // Volume value with subtle glow
+            ctx.fillStyle = COLORS.TEXT;
             ctx.font = `600 ${dp(13, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'right';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
+            ctx.shadowBlur = dp(2, scaleFactor);
             const volValue = volume - 80; // Convert to dB
             const volString = volValue % 1 === 0 ? volValue.toString() : volValue.toFixed(1);
             ctx.fillText(volString, x + w - pad, y + dp(9, scaleFactor));
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
         }
 
         function drawInfoOSD(displayMode, scaleFactor) {
@@ -345,16 +430,43 @@
             const y = dp(24, scaleFactor);
             const w = dp(280, scaleFactor);
             const blockHeight = dp(displayMode === 'EXTENDED' ? 140 : 70, scaleFactor);
+            const radius = dp(12, scaleFactor);
 
-            // Background
-            ctx.fillStyle = hexToRgba(COLORS.BG);
+            // 1. Outer glow/shadow (glassmorphism depth)
+            ctx.shadowColor = COLORS.SHADOW;
+            ctx.shadowBlur = dp(20, scaleFactor);
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = dp(8, scaleFactor);
+
+            ctx.fillStyle = COLORS.BG;
             ctx.beginPath();
-            ctx.roundRect(x, y, w, blockHeight, dp(8, scaleFactor));
+            ctx.roundRect(x, y, w, blockHeight, radius);
             ctx.fill();
 
-            // Border
-            ctx.strokeStyle = hexToRgba(COLORS.BORDER);
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            // 2. Subtle blue glow (glassmorphism accent)
+            ctx.fillStyle = COLORS.BG_GLOW;
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, blockHeight, radius);
+            ctx.fill();
+
+            // 3. Outer border
+            ctx.strokeStyle = COLORS.BORDER;
+            ctx.lineWidth = dp(1.5, scaleFactor);
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, blockHeight, radius);
+            ctx.stroke();
+
+            // 4. Inner highlight (top edge for glass effect)
+            ctx.strokeStyle = COLORS.BORDER_INNER;
             ctx.lineWidth = dp(1, scaleFactor);
+            ctx.beginPath();
+            ctx.roundRect(x + dp(1, scaleFactor), y + dp(1, scaleFactor),
+                         w - dp(2, scaleFactor), blockHeight - dp(2, scaleFactor), radius - dp(1, scaleFactor));
             ctx.stroke();
 
             const pad = dp(12, scaleFactor);
@@ -401,20 +513,42 @@
             const boxW = dp(24, scaleFactor);
             const boxH = dp(16, scaleFactor);
             const spacing = dp(6, scaleFactor);
+            const radius = dp(4, scaleFactor);
 
             speakers.forEach(code => {
-                // Draw speaker box
-                ctx.fillStyle = hexToRgba(COLORS.ACCENT);
+                // Speaker box with glassmorphism
+                // 1. Subtle shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = dp(4, scaleFactor);
+                ctx.shadowOffsetY = dp(2, scaleFactor);
+
+                ctx.fillStyle = COLORS.ACCENT;
                 ctx.beginPath();
-                ctx.roundRect(x, y, boxW, boxH, dp(3, scaleFactor));
+                ctx.roundRect(x, y, boxW, boxH, radius);
                 ctx.fill();
 
-                // Draw label
-                ctx.fillStyle = hexToRgba(COLORS.TEXT);
-                ctx.font = `600 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+
+                // 2. Inner glow
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = dp(0.5, scaleFactor);
+                ctx.beginPath();
+                ctx.roundRect(x + dp(1, scaleFactor), y + dp(1, scaleFactor),
+                             boxW - dp(2, scaleFactor), boxH - dp(2, scaleFactor), radius - dp(1, scaleFactor));
+                ctx.stroke();
+
+                // 3. Label with subtle glow
+                ctx.fillStyle = COLORS.TEXT;
+                ctx.font = `700 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(79, 195, 247, 0.5)';
+                ctx.shadowBlur = dp(3, scaleFactor);
                 ctx.fillText(code, x + boxW / 2, y + boxH / 2);
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
 
                 x += boxW + spacing;
             });
