@@ -238,6 +238,25 @@
             </div>
 
             <div class="control-group">
+                <label for="volumeDisplay">Volume Display</label>
+                <select id="volumeDisplay">
+                    <option value="db">Decibel (dB)</option>
+                    <option value="absolute">Absolute (0-98)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="background">TV Background</label>
+                <select id="background">
+                    <option value="gradient">Gradient (Purple)</option>
+                    <option value="movie">Movie Scene (Dark)</option>
+                    <option value="game">Game (Bright)</option>
+                    <option value="black">Black Screen</option>
+                    <option value="nature">Nature Documentary</option>
+                </select>
+            </div>
+
+            <div class="control-group">
                 <label for="volume">Volume: <span id="volumeValue">45</span></label>
                 <input type="range" id="volume" min="0" max="98" value="45">
             </div>
@@ -306,9 +325,20 @@
         // Controls
         const displayModeSelect = document.getElementById('displayMode');
         const scaleSelect = document.getElementById('scale');
+        const volumeDisplaySelect = document.getElementById('volumeDisplay');
+        const backgroundSelect = document.getElementById('background');
         const volumeSlider = document.getElementById('volume');
         const volumeValueSpan = document.getElementById('volumeValue');
         const mutedCheckbox = document.getElementById('muted');
+
+        // Background images
+        const backgrounds = {
+            gradient: 'url("data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'1920\' height=\'1080\'><defs><linearGradient id=\'g\' x1=\'0%\' y1=\'0%\' x2=\'100%\' y2=\'100%\'><stop offset=\'0%\' style=\'stop-color:%23667eea;stop-opacity:1\' /><stop offset=\'100%\' style=\'stop-color:%23764ba2;stop-opacity:1\' /></linearGradient></defs><rect width=\'1920\' height=\'1080\' fill=\'url(%23g)\'/></svg>")',
+            movie: 'linear-gradient(135deg, rgba(20,20,25,1) 0%, rgba(30,25,35,1) 100%)',
+            game: 'linear-gradient(135deg, rgba(40,80,120,1) 0%, rgba(60,100,140,1) 100%)',
+            black: 'linear-gradient(135deg, rgba(10,10,10,1) 0%, rgba(15,15,15,1) 100%)',
+            nature: 'linear-gradient(135deg, rgba(20,60,40,1) 0%, rgba(40,80,60,1) 100%)'
+        };
 
         function dp(value, scaleFactor) {
             return value * density * scaleFactor;
@@ -322,7 +352,7 @@
             return `rgba(${r}, ${g}, ${b}, ${a})`;
         }
 
-        function drawVolumeOSD(scaleFactor, volume, muted) {
+        function drawVolumeOSD(scaleFactor, volume, muted, volumeDisplayMode) {
             const w = dp(200, scaleFactor);
             const h = dp(36, scaleFactor);
             const x = (canvas.width - w) / 2;
@@ -402,8 +432,17 @@
             ctx.font = `700 ${dp(14, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
-            const volValue = volume - 80; // Convert to dB
-            const volString = volValue % 1 === 0 ? volValue.toString() : volValue.toFixed(1);
+
+            let volString;
+            if (volumeDisplayMode === 'absolute') {
+                // Absolute mode: 0-98
+                volString = volume.toString();
+            } else {
+                // dB mode: -80 to +18
+                const volValue = volume - 80;
+                volString = volValue % 1 === 0 ? volValue.toString() : volValue.toFixed(1);
+            }
+
             ctx.fillText(volString, x + w - pad, y + h / 2);
         }
 
@@ -526,28 +565,19 @@
         function render() {
             const displayMode = displayModeSelect.value;
             const scaleFactor = parseFloat(scaleSelect.value);
+            const volumeDisplayMode = volumeDisplaySelect.value;
+            const backgroundType = backgroundSelect.value;
             const volume = parseInt(volumeSlider.value);
             const muted = mutedCheckbox.checked;
 
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw background gradient (simulating TV content)
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#1a1a2e');
-            gradient.addColorStop(1, '#16213e');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw "Your Content Here" text
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-            ctx.font = '48px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Your Content Here (1920×1080)', canvas.width / 2, canvas.height / 2);
+            // Draw background based on selection
+            drawBackground(backgroundType);
 
             // Always draw volume OSD
-            drawVolumeOSD(scaleFactor, volume, muted);
+            drawVolumeOSD(scaleFactor, volume, muted, volumeDisplayMode);
 
             // Draw info OSD if INFO or EXTENDED mode
             if (displayMode === 'INFO' || displayMode === 'EXTENDED') {
@@ -556,6 +586,71 @@
 
             // Update stats
             updateStats(displayMode, scaleFactor);
+        }
+
+        function drawBackground(type) {
+            switch(type) {
+                case 'movie':
+                    // Dark movie scene
+                    const movieGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    movieGrad.addColorStop(0, '#141419');
+                    movieGrad.addColorStop(1, '#1e1923');
+                    ctx.fillStyle = movieGrad;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Add some fake content
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    ctx.font = '32px -apple-system';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎬 Movie Scene', canvas.width / 2, canvas.height / 2);
+                    break;
+
+                case 'game':
+                    // Bright game scene
+                    const gameGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gameGrad.addColorStop(0, '#285078');
+                    gameGrad.addColorStop(1, '#3c648c');
+                    ctx.fillStyle = gameGrad;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.font = '32px -apple-system';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎮 Game Scene', canvas.width / 2, canvas.height / 2);
+                    break;
+
+                case 'black':
+                    // Black screen
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    break;
+
+                case 'nature':
+                    // Nature documentary
+                    const natureGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    natureGrad.addColorStop(0, '#143c28');
+                    natureGrad.addColorStop(1, '#28503c');
+                    ctx.fillStyle = natureGrad;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.font = '32px -apple-system';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🌿 Nature Documentary', canvas.width / 2, canvas.height / 2);
+                    break;
+
+                default: // gradient
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                    gradient.addColorStop(0, '#667eea');
+                    gradient.addColorStop(1, '#764ba2');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.font = '32px -apple-system';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('Your Content Here (1920×1080)', canvas.width / 2, canvas.height / 2);
+            }
         }
 
         function updateStats(displayMode, scaleFactor) {
@@ -591,6 +686,8 @@
         // Event listeners
         displayModeSelect.addEventListener('change', render);
         scaleSelect.addEventListener('change', render);
+        volumeDisplaySelect.addEventListener('change', render);
+        backgroundSelect.addEventListener('change', render);
         volumeSlider.addEventListener('input', () => {
             volumeValueSpan.textContent = volumeSlider.value;
             render();
