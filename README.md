@@ -127,64 +127,87 @@ See [DOCUMENTATION.md](DOCUMENTATION.md) for detailed visual examples and techni
 ### STANDARD Mode
 Shows only volume bar at bottom-center:
 
-```
-┌─────────────────────────────────────┐ ← Your TV screen (full view)
-│                                     │
-│                                     │
-│        Your Content Here            │
-│                                     │
-│                                     │
-│  ┌─────────────────────┐            │ ← Volume bar (bottom-center)
-│  │ VOL ▓▓▓▓▓░░░░░ 45  │            │
-│  └─────────────────────┘            │
-└─────────────────────────────────────┘
-```
+<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
+  <!-- Volume Bar (bottom-center) -->
+  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+      <span>VOL</span>
+      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
+        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
+      </div>
+      <span style="font-weight: 600;">45</span>
+    </div>
+  </div>
+  <!-- Label -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
+</div>
 
 ### INFO Mode
 Adds info box at top-left with source and sound mode:
 
-```
-┌─────────────────────────────────────┐
-│ ┌─────────────────┐                 │ ← Info box (top-left)
-│ │ GAME • DIRECT   │                 │
-│ └─────────────────┘                 │
-│                                     │
-│        Your Content Here            │
-│                                     │
-│  ┌─────────────────────┐            │ ← Volume bar (bottom-center)
-│  │ VOL ▓▓▓▓▓░░░░░ 45  │            │
-│  └─────────────────────┘            │
-└─────────────────────────────────────┘
-```
+<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
+  <!-- Info Box (top-left) -->
+  <div style="position: absolute; top: 20px; left: 20px; background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+    <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500;">
+      GAME • DIRECT
+    </div>
+  </div>
+  <!-- Volume Bar (bottom-center) -->
+  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+      <span>VOL</span>
+      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
+        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
+      </div>
+      <span style="font-weight: 600;">45</span>
+    </div>
+  </div>
+  <!-- Label -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
+</div>
 
 ### EXTENDED Mode
 Complete technical info with speaker layout in top-left box:
 
-```
-┌─────────────────────────────────────┐
-│ ┌───────────────────────┐           │ ← Info box (top-left)
-│ │ GAME • DOLBY ATMOS    │           │
-│ │ HDMI • AUTO • DRC:AUTO│           │
-│ │                       │           │
-│ │     TFL      TFR      │           │ Visual speaker layout
-│ │   FL   C   FR         │           │ (active highlighted)
-│ │   SL   ○   SR         │           │ ○ = listener position
-│ │       SW              │           │
-│ └───────────────────────┘           │
-│                                     │
-│        Your Content Here            │
-│                                     │
-│  ┌─────────────────────┐            │ ← Volume bar (bottom-center)
-│  │ VOL ▓▓▓▓▓░░░░░ 45  │            │
-│  └─────────────────────┘            │
-└─────────────────────────────────────┘
-```
+<div style="position: relative; width: 640px; height: 360px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 8px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif;">
+  <!-- Info Box (top-left) with speaker layout -->
+  <div style="position: absolute; top: 20px; left: 20px; background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); min-width: 220px;">
+    <!-- Source & Mode -->
+    <div style="color: rgba(255, 255, 255, 0.9); font-size: 13px; font-weight: 500; margin-bottom: 6px;">
+      GAME • DOLBY ATMOS
+    </div>
+    <!-- Technical Details -->
+    <div style="color: rgba(255, 255, 255, 0.7); font-size: 11px; margin-bottom: 10px;">
+      HDMI • AUTO • DRC:AUTO
+    </div>
+    <!-- Speaker Layout -->
+    <div style="color: rgba(255, 255, 255, 0.85); font-size: 11px; font-family: 'Courier New', monospace; line-height: 1.6; text-align: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+      <div style="margin-bottom: 4px;">    <span style="color: #4fc3f7; font-weight: bold;">TFL</span>      <span style="color: #4fc3f7; font-weight: bold;">TFR</span></div>
+      <div style="margin-bottom: 4px;"> <span style="color: #4fc3f7; font-weight: bold;">FL</span>   <span style="color: #4fc3f7; font-weight: bold;">C</span>   <span style="color: #4fc3f7; font-weight: bold;">FR</span></div>
+      <div style="margin-bottom: 4px;"> <span style="color: #4fc3f7; font-weight: bold;">SL</span>   <span style="color: rgba(255, 255, 255, 0.4);">○</span>   <span style="color: #4fc3f7; font-weight: bold;">SR</span></div>
+      <div>     <span style="color: #4fc3f7; font-weight: bold;">SW</span></div>
+    </div>
+  </div>
+  <!-- Volume Bar (bottom-center) -->
+  <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(30, 39, 54, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);">
+    <div style="color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 12px;">
+      <span>VOL</span>
+      <div style="width: 120px; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden;">
+        <div style="width: 60%; height: 100%; background: linear-gradient(90deg, #4fc3f7 0%, #81c9f7 100%);"></div>
+      </div>
+      <span style="font-weight: 600;">45</span>
+    </div>
+  </div>
+  <!-- Label -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;">Your Content Here</div>
+</div>
 
 **Key Features:**
-- Volume changes NEVER obscure content (always bottom, compact)
-- Info box only appears top-left when needed
-- Full audio format names (DOLBY ATMOS, DTS:X MSTR, etc.)
-- Speaker layout shows your exact configuration
+- **Glassy Design:** Semi-transparent with backdrop blur
+- **Volume Bar:** Always bottom-center, never blocks content
+- **Info Box:** Appears top-left only when needed
+- **Speaker Layout:** Active speakers highlighted in blue
+- **Full Format Names:** DOLBY ATMOS, DTS:X MSTR, etc.
 
 ## How it Works
 
