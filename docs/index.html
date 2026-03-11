@@ -289,6 +289,10 @@
                     <div class="stat-value" id="infoSize">—</div>
                 </div>
                 <div class="stat">
+                    <div class="stat-label">Design</div>
+                    <div class="stat-value">Apple tvOS Style</div>
+                </div>
+                <div class="stat">
                     <div class="stat-label">Screen Coverage</div>
                     <div class="stat-value" id="coverage">~1.5%</div>
                 </div>
@@ -449,8 +453,8 @@
         function drawInfoOSD(displayMode, scaleFactor) {
             const x = dp(24, scaleFactor);
             const y = dp(24, scaleFactor);
-            const w = dp(280, scaleFactor);
-            const blockHeight = dp(displayMode === 'EXTENDED' ? 140 : 70, scaleFactor);
+            const w = dp(240, scaleFactor);  // Kompakter: 280 -> 240
+            const blockHeight = dp(displayMode === 'EXTENDED' ? 100 : 60, scaleFactor);  // Viel kompakter!
             const radius = dp(12, scaleFactor);
 
             // 1. Outer glow/shadow (glassmorphism depth)
@@ -490,22 +494,31 @@
                          w - dp(2, scaleFactor), blockHeight - dp(2, scaleFactor), radius - dp(1, scaleFactor));
             ctx.stroke();
 
-            const pad = dp(12, scaleFactor);
-            let currentY = y + dp(16, scaleFactor);
+            const pad = dp(10, scaleFactor);  // Kleinerer Padding
+            let currentY = y + dp(12, scaleFactor);  // Weniger Abstand oben
 
-            // Source + Sound Mode - higher contrast
+            // Source + Sound Mode - kompakter
             ctx.fillStyle = COLORS.TEXT;
-            ctx.font = `600 ${dp(12, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.font = `600 ${dp(11, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText('Fire TV • DOLBY ATMOS', x + pad, currentY);
-            currentY += dp(20, scaleFactor);
+            currentY += dp(16, scaleFactor);  // Weniger Abstand
 
-            // Signal + Digital + Tech Info - better readability
-            ctx.fillStyle = COLORS.TEXT_DIM;
-            ctx.font = `500 ${dp(10, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
-            ctx.fillText('HDMI • AUTO • DRC:AUTO', x + pad, currentY);
-            currentY += dp(22, scaleFactor);
+            // Signal + Digital + Tech Info - nur wenn nicht OFF
+            const techInfo = [];
+            if (displayMode === 'EXTENDED') {
+                // Nur wichtige Infos zeigen
+                techInfo.push('HDMI');
+                techInfo.push('AUTO');
+            }
+
+            if (techInfo.length > 0) {
+                ctx.fillStyle = COLORS.TEXT_DIM;
+                ctx.font = `500 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.fillText(techInfo.join(' • '), x + pad, currentY);
+                currentY += dp(16, scaleFactor);
+            }
 
             // Compact speaker display (EXTENDED mode only)
             if (displayMode === 'EXTENDED') {
@@ -516,26 +529,19 @@
         function drawCompactSpeakers(x, y, maxWidth, scaleFactor) {
             let currentY = y;
 
-            // Front Speakers - better readability
-            ctx.fillStyle = COLORS.TEXT_DIM;
-            ctx.font = `600 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText('FRONT SPEAKERS', x, currentY);
-            currentY += dp(14, scaleFactor);
+            // Einfach alle Speaker in Reihen anzeigen - KEIN Label!
+            // Wie Denon Original: kompakt und direkt
             currentY = drawSpeakerRow(x, currentY, ['FL', 'C', 'FR'], scaleFactor);
-            currentY += dp(10, scaleFactor);
-
-            // Surround + Sub
+            currentY += dp(5, scaleFactor);  // Weniger Abstand zwischen Reihen
             currentY = drawSpeakerRow(x, currentY, ['SL', 'SR', 'SW'], scaleFactor);
         }
 
         function drawSpeakerRow(startX, y, speakers, scaleFactor) {
             let x = startX;
-            const boxW = dp(24, scaleFactor);
-            const boxH = dp(16, scaleFactor);
-            const spacing = dp(6, scaleFactor);
-            const radius = dp(4, scaleFactor);
+            const boxW = dp(22, scaleFactor);  // Etwas kleiner
+            const boxH = dp(14, scaleFactor);  // Etwas kleiner
+            const spacing = dp(4, scaleFactor);  // Weniger Abstand
+            const radius = dp(3, scaleFactor);
 
             speakers.forEach(code => {
                 // Clean speaker box - Apple style (no heavy glows)
@@ -549,9 +555,9 @@
                 ctx.lineWidth = dp(1, scaleFactor);
                 ctx.stroke();
 
-                // Clean white label
+                // Clean white label - kleinere Schrift
                 ctx.fillStyle = COLORS.TEXT;
-                ctx.font = `700 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.font = `700 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(code, x + boxW / 2, y + boxH / 2);
@@ -661,12 +667,12 @@
             if (displayMode === 'STANDARD') {
                 document.getElementById('infoSize').textContent = '—';
             } else if (displayMode === 'INFO') {
-                const infoW = Math.round(280 * scaleFactor);
-                const infoH = Math.round(70 * scaleFactor);
+                const infoW = Math.round(240 * scaleFactor);
+                const infoH = Math.round(60 * scaleFactor);
                 document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
             } else {
-                const infoW = Math.round(280 * scaleFactor);
-                const infoH = Math.round(140 * scaleFactor);
+                const infoW = Math.round(240 * scaleFactor);
+                const infoH = Math.round(100 * scaleFactor);
                 document.getElementById('infoSize').textContent = `${infoW}×${infoH}dp`;
             }
 
