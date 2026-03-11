@@ -18,6 +18,10 @@ class OSDView(context: Context) : View(context) {
     var displayMode: OSDDisplayMode = OSDDisplayMode.STANDARD
     var scale: OSDScale = OSDScale.MEDIUM
 
+    // Separate visibility for each OSD element
+    var showVolumeOSD: Boolean = false
+    var showInfoOSD: Boolean = false
+
     private var animVol: Float = 0f
     private var volAnim: ValueAnimator? = null
 
@@ -61,11 +65,13 @@ class OSDView(context: Context) : View(context) {
     }
 
     override fun onDraw(canvas: Canvas) {
-        // Always draw volume OSD at bottom
-        drawVolumeOSD(canvas)
+        // Draw volume OSD (bottom-center) if triggered by volume change
+        if (showVolumeOSD) {
+            drawVolumeOSD(canvas)
+        }
 
-        // Draw info OSD at top-left only if INFO or EXTENDED mode
-        if (displayMode == OSDDisplayMode.INFO || displayMode == OSDDisplayMode.EXTENDED) {
+        // Draw info OSD (top-left) if triggered by source/mode/mute AND in INFO/EXTENDED mode
+        if (showInfoOSD && (displayMode == OSDDisplayMode.INFO || displayMode == OSDDisplayMode.EXTENDED)) {
             drawInfoOSD(canvas)
         }
     }
@@ -165,17 +171,23 @@ class OSDView(context: Context) : View(context) {
         rf.set(x + dp(1f), y + dp(1f), x + w - dp(1f), y + h - dp(1f))
         canvas.drawRoundRect(rf, radius - dp(1f), radius - dp(1f), pBorder)
 
-        // Source + Sound Mode (audioformat) - centered, large and readable
-        pText.color = TEXT
+        // Info text: Show MUTE if muted, otherwise Source • Sound Mode
         pText.textSize = dp(11f)
         pText.textAlign = Paint.Align.LEFT
         pText.textBaseline = Paint.Align.CENTER
 
-        val infoText = buildString {
-            state.inputSource?.let { append(it) }
-            if (state.inputSource != null && state.soundMode != null) append(" • ")
-            state.soundMode?.let { append(it) }
+        val infoText = if (state.muted) {
+            pText.color = TEXT_MUTE  // Red for mute
+            "MUTE"
+        } else {
+            pText.color = TEXT
+            buildString {
+                state.inputSource?.let { append(it) }
+                if (state.inputSource != null && state.soundMode != null) append(" • ")
+                state.soundMode?.let { append(it) }
+            }
         }
+
         if (infoText.isNotBlank()) {
             canvas.drawText(infoText, x + dp(12f), y + h / 2f + dp(4f), pText)
         }

@@ -24,8 +24,11 @@ class OSDService : Service() {
 
     private val handler    = Handler(Looper.getMainLooper())
     private var client:    IAVRClient? = null
-    private var hideTimer: Runnable?  = null
     private var isClientConnected = false
+
+    // Separate timers for volume and info OSD
+    private var volumeHideTimer: Runnable? = null
+    private var infoHideTimer: Runnable? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -87,10 +90,18 @@ class OSDService : Service() {
 
     private fun onUpdate(state: AVRState, trigger: OSDTrigger) {
         Log.d(TAG, "onUpdate trigger=$trigger power=${state.power} vol=${state.volumeDb}")
-        if (!state.power) { hide(); return }
+        if (!state.power) { hideAll(); return }
+
         osd.state = state
         osd.animateVolume(state.volumeNorm)
-        show(trigger.timeoutMs)
+
+        // Show appropriate OSD based on trigger
+        if (trigger.showVolume) {
+            showVolumeOSD(trigger.timeoutMs)
+        }
+        if (trigger.showInfo) {
+            showInfoOSD(trigger.timeoutMs)
+        }
     }
 
     private fun onConnected(connected: Boolean) {
@@ -99,32 +110,75 @@ class OSDService : Service() {
         notify(if (connected) "Verbunden ✓ ($protocol)" else "Verbinde…")
     }
 
-    private fun show(timeoutMs: Long) {
+    private fun showVolumeOSD(timeoutMs: Long) {
         if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
-        updateDisplayMode()  // Refresh display mode in case settings changed
-        if (!attached) {
-            try { wm.addView(osd, makeParams()); attached = true }
-            catch (e: Exception) { Log.e(TAG, "addView: ${e.message}"); return }
-        } else {
-            // Update layout params if already attached (display mode might have changed)
-            try { wm.updateViewLayout(osd, makeParams()) }
-            catch (e: Exception) { Log.e(TAG, "updateViewLayout: ${e.message}") }
-        }
-        osd.visibility = View.VISIBLE
+        updateDisplayMode()
+        ensureAttached()
+
+        osd.showVolumeOSD = true
         osd.alpha = 1f
-        hideTimer?.let { handler.removeCallbacks(it) }
-        val r = Runnable { fadeOut() }
-        hideTimer = r
+        osd.visibility = View.VISIBLE
+        osd.invalidate()
+
+        // Cancel previous volume timer, start new one
+        volumeHideTimer?.let { handler.removeCallbacks(it) }
+        val r = Runnable {
+            osd.showVolumeOSD = false
+            fadeOutIfBothHidden()
+        }
+        volumeHideTimer = r
         handler.postDelayed(r, timeoutMs)
     }
 
-    private fun fadeOut() {
-        osd.animate().alpha(0f).setDuration(350)
-            .withEndAction { osd.visibility = View.GONE; osd.alpha = 1f }.start()
+    private fun showInfoOSD(timeoutMs: Long) {
+        if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
+        updateDisplayMode()
+        ensureAttached()
+
+        osd.showInfoOSD = true
+        osd.alpha = 1f
+        osd.visibility = View.VISIBLE
+        osd.invalidate()
+
+        // Cancel previous info timer, start new one
+        infoHideTimer?.let { handler.removeCallbacks(it) }
+        val r = Runnable {
+            osd.showInfoOSD = false
+            fadeOutIfBothHidden()
+        }
+        infoHideTimer = r
+        handler.postDelayed(r, timeoutMs)
     }
 
-    private fun hide() {
-        hideTimer?.let { handler.removeCallbacks(it) }
+    private fun ensureAttached() {
+        if (!attached) {
+            try { wm.addView(osd, makeParams()); attached = true }
+            catch (e: Exception) { Log.e(TAG, "addView: ${e.message}") }
+        } else {
+            try { wm.updateViewLayout(osd, makeParams()) }
+            catch (e: Exception) { Log.e(TAG, "updateViewLayout: ${e.message}") }
+        }
+    }
+
+    private fun fadeOutIfBothHidden() {
+        // Only fade out the whole overlay if both volume and info are hidden
+        if (!osd.showVolumeOSD && !osd.showInfoOSD) {
+            osd.animate().alpha(0f).setDuration(350)
+                .withEndAction {
+                    osd.visibility = View.GONE
+                    osd.alpha = 1f
+                }.start()
+        } else {
+            // Just redraw to hide the one element
+            osd.invalidate()
+        }
+    }
+
+    private fun hideAll() {
+        volumeHideTimer?.let { handler.removeCallbacks(it) }
+        infoHideTimer?.let { handler.removeCallbacks(it) }
+        osd.showVolumeOSD = false
+        osd.showInfoOSD = false
         if (attached) osd.visibility = View.GONE
     }
 

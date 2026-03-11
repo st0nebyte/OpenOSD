@@ -293,12 +293,14 @@ class AVRClientTelnet(
 
         if (next == old) return
 
-        // Determine trigger
+        // Determine trigger (priority order: mute > volume > source > mode)
         val trigger = when {
             !old.power && next.power                       -> OSDTrigger.VOLUME
             old.muted != next.muted                        -> OSDTrigger.MUTE
             Math.abs(old.volumeDb - next.volumeDb) > 0.1   -> OSDTrigger.VOLUME
-            else                                           -> return
+            old.inputSource != next.inputSource            -> OSDTrigger.SOURCE
+            old.soundMode != next.soundMode                -> OSDTrigger.SOUND_MODE
+            else                                           -> return  // No relevant change
         }
 
         if (next.power) {
