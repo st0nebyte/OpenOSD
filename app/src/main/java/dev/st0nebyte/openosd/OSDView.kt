@@ -31,15 +31,17 @@ class OSDView(context: Context) : View(context) {
         return v * density * scaleFactor
     }
 
-    // ── Modern Light Colors ──
-    private val BG        = Color.parseColor("#CC0A0F14")
-    private val BORDER    = Color.parseColor("#18FFFFFF")
-    private val ACCENT    = Color.parseColor("#60A0C0E0")
-    private val TEXT      = Color.parseColor("#E5FFFFFF")
-    private val TEXT_DIM  = Color.parseColor("#80FFFFFF")
-    private val TEXT_MUTE = Color.parseColor("#D0FF6060")
-    private val BAR_BG    = Color.parseColor("#18FFFFFF")
-    private val BAR_FILL  = Color.parseColor("#90B0D0F0")
+    // ── Apple tvOS Glassmorphism - Neutral Grey ──
+    private val BG           = Color.parseColor("#B31E1E23")  // 70% opaque dark grey (more transparent for glass effect)
+    private val BG_GLOW      = Color.parseColor("#05FFFFFF")  // Subtle white inner glow
+    private val BORDER       = Color.parseColor("#4DFFFFFF")  // 30% white border
+    private val BORDER_INNER = Color.parseColor("#1FFFFFFF")  // 12% white inner highlight
+    private val ACCENT       = Color.parseColor("#80C8C8CD")  // Neutral grey accent
+    private val TEXT         = Color.parseColor("#FFFFFFFF")  // Full white for readability
+    private val TEXT_DIM     = Color.parseColor("#BFFFFFFF")  // 75% white
+    private val TEXT_MUTE    = Color.parseColor("#FFFF6464")  // Bright red
+    private val BAR_BG       = Color.parseColor("#33FFFFFF")  // 20% white
+    private val BAR_FILL     = Color.parseColor("#D9FFFFFF")  // 85% white (Apple style)
 
     // ── Cached Paints ──
     private val pBg       = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BG }
@@ -47,7 +49,6 @@ class OSDView(context: Context) : View(context) {
     private val pBarBg    = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BAR_BG }
     private val pBarFill  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; color = BAR_FILL }
     private val pText     = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = Typeface.DEFAULT }
-    private val pSpeaker  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val rf        = RectF()
 
     fun animateVolume(target: Float) {
@@ -69,25 +70,45 @@ class OSDView(context: Context) : View(context) {
         }
     }
 
-    // ── Volume OSD (bottom-center, compact) ──────────────────────
+    // ── Volume OSD (bottom-center, Apple tvOS glassmorphism) ─────
     private fun drawVolumeOSD(canvas: Canvas) {
-        val w = dp(200f)  // Compact width
-        val h = dp(36f)   // Compact height
+        val w = dp(200f)
+        val h = dp(36f)
         val x = (width - w) / 2f
-        val y = height - dp(80f)  // 80dp from bottom
+        val y = height - dp(80f)
+        val radius = dp(10f)
 
-        // Background
+        // Glassmorphism layers
         rf.set(x, y, x + w, y + h)
-        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBg)
-        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBorder)
+
+        // 1. Background (70% opaque for glass effect)
+        pBg.color = BG
+        canvas.drawRoundRect(rf, radius, radius, pBg)
+
+        // 2. Subtle inner glow (glass highlight)
+        pBg.color = BG_GLOW
+        canvas.drawRoundRect(rf, radius, radius, pBg)
+        pBg.color = BG  // Reset
+
+        // 3. Outer border
+        pBorder.strokeWidth = dp(1.5f)
+        pBorder.color = BORDER
+        canvas.drawRoundRect(rf, radius, radius, pBorder)
+
+        // 4. Inner highlight (glass edge)
+        pBorder.strokeWidth = dp(1f)
+        pBorder.color = BORDER_INNER
+        rf.set(x + dp(1f), y + dp(1f), x + w - dp(1f), y + h - dp(1f))
+        canvas.drawRoundRect(rf, radius - dp(1f), radius - dp(1f), pBorder)
 
         val pad = dp(12f)
 
-        // VOL/MUTE label
+        // VOL/MUTE label (centered vertically)
         pText.color = if (state.muted) TEXT_MUTE else TEXT_DIM
         pText.textSize = dp(9f)
         pText.textAlign = Paint.Align.LEFT
-        canvas.drawText(if (state.muted) "MUTE" else "VOL", x + pad, y + dp(13f), pText)
+        pText.textBaseline = Paint.Align.CENTER
+        canvas.drawText(if (state.muted) "MUTE" else "VOL", x + pad, y + h / 2f + dp(3f), pText)
 
         // Volume bar
         val barX = x + pad + dp(38f)
@@ -96,146 +117,69 @@ class OSDView(context: Context) : View(context) {
         val barY = y + (h - barH) / 2f
 
         rf.set(barX, barY, barX + barW, barY + barH)
-        canvas.drawRect(rf, pBarBg)
+        pBarBg.color = BAR_BG
+        canvas.drawRoundRect(rf, dp(4f), dp(4f), pBarBg)
 
         val fillW = (barW * animVol).coerceAtLeast(0f)
         if (fillW > 2f) {
             rf.set(barX, barY, barX + fillW, barY + barH)
-            canvas.drawRect(rf, pBarFill)
+            pBarFill.color = BAR_FILL
+            canvas.drawRoundRect(rf, dp(4f), dp(4f), pBarFill)
         }
 
-        // Volume value
+        // Volume value (centered vertically)
         pText.color = TEXT
         pText.textSize = dp(13f)
         pText.textAlign = Paint.Align.RIGHT
-        canvas.drawText(state.volumeString, x + w - pad, y + dp(23f), pText)
+        canvas.drawText(state.volumeString, x + w - pad, y + h / 2f + dp(4.5f), pText)
     }
 
-    // ── Info OSD (top-left, compact like Denon original) ─────────
+    // ── Info OSD (top-left, simplified - focus on audioformat) ───
     private fun drawInfoOSD(canvas: Canvas) {
         val x = dp(24f)
         val y = dp(24f)
-        val w = dp(280f)
-        var currentY = y
+        val w = dp(240f)
+        val h = dp(42f)
+        val radius = dp(10f)
 
-        // Background for entire info block
-        val blockHeight = dp(if (displayMode == OSDDisplayMode.EXTENDED) 140f else 70f)
-        rf.set(x, y, x + w, y + blockHeight)
-        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBg)
-        canvas.drawRoundRect(rf, dp(8f), dp(8f), pBorder)
+        // Glassmorphism layers
+        rf.set(x, y, x + w, y + h)
 
-        val pad = dp(12f)
-        currentY += dp(16f)
+        // 1. Background (70% opaque for glass effect)
+        pBg.color = BG
+        canvas.drawRoundRect(rf, radius, radius, pBg)
 
-        // Source + Sound Mode
+        // 2. Subtle inner glow (glass highlight)
+        pBg.color = BG_GLOW
+        canvas.drawRoundRect(rf, radius, radius, pBg)
+        pBg.color = BG  // Reset
+
+        // 3. Outer border
+        pBorder.strokeWidth = dp(1.5f)
+        pBorder.color = BORDER
+        canvas.drawRoundRect(rf, radius, radius, pBorder)
+
+        // 4. Inner highlight (glass edge)
+        pBorder.strokeWidth = dp(1f)
+        pBorder.color = BORDER_INNER
+        rf.set(x + dp(1f), y + dp(1f), x + w - dp(1f), y + h - dp(1f))
+        canvas.drawRoundRect(rf, radius - dp(1f), radius - dp(1f), pBorder)
+
+        // Source + Sound Mode (audioformat) - centered, large and readable
         pText.color = TEXT
         pText.textSize = dp(11f)
         pText.textAlign = Paint.Align.LEFT
+        pText.textBaseline = Paint.Align.CENTER
 
-        val line1 = buildString {
+        val infoText = buildString {
             state.inputSource?.let { append(it) }
             if (state.inputSource != null && state.soundMode != null) append(" • ")
             state.soundMode?.let { append(it) }
         }
-        if (line1.isNotBlank()) {
-            canvas.drawText(line1, x + pad, currentY, pText)
-            currentY += dp(18f)
-        }
-
-        // Signal + Digital + Tech Info
-        pText.textSize = dp(9f)
-        pText.color = TEXT_DIM
-
-        val line2 = buildString {
-            state.signalDetect?.let { append(it) }
-            if (state.signalDetect != null && state.digitalMode != null) append(" • ")
-            state.digitalMode?.let { append(it) }
-
-            val tech = mutableListOf<String>()
-            state.drc?.let { if (it != "OFF" && it != "AUTO") tech.add("DRC:$it") }
-            state.audioRestorer?.let { if (it != "OFF") tech.add("R:$it") }
-            state.ecoMode?.let { if (it == "ON") tech.add("ECO") }
-            state.hdmiAudioOut?.let { if (it == "TV") tech.add("→TV") }
-
-            if (tech.isNotEmpty()) {
-                if (state.signalDetect != null || state.digitalMode != null) append(" • ")
-                append(tech.joinToString(" "))
-            }
-        }
-        if (line2.isNotBlank()) {
-            canvas.drawText(line2, x + pad, currentY, pText)
-            currentY += dp(20f)
-        }
-
-        // Compact speaker display (EXTENDED mode only, like Denon original)
-        if (displayMode == OSDDisplayMode.EXTENDED && state.speakers.isNotEmpty()) {
-            drawCompactSpeakers(canvas, x + pad, currentY, w - pad * 2)
+        if (infoText.isNotBlank()) {
+            canvas.drawText(infoText, x + dp(12f), y + h / 2f + dp(4f), pText)
         }
     }
 
-    // ── Compact Speaker Display (Box-style like Denon) ───────────
-    private fun drawCompactSpeakers(canvas: Canvas, x: Float, y: Float, maxWidth: Float) {
-        val speakers = state.speakers
-        if (speakers.isEmpty()) return
-
-        var currentY = y
-
-        // Group speakers
-        val frontSpeakers = speakers.filter { it in listOf("FL", "FR", "C") }
-        val heightSpeakers = speakers.filter { it.startsWith("FH") || it.startsWith("T") }
-        val surroundSpeakers = speakers.filter { it in listOf("SL", "SR", "SBL", "SBR", "SB") }
-        val subs = speakers.filter { it.startsWith("SW") }
-
-        // Front Speakers
-        if (frontSpeakers.isNotEmpty()) {
-            pText.color = TEXT_DIM
-            pText.textSize = dp(7f)
-            pText.textAlign = Paint.Align.LEFT
-            canvas.drawText("FRONT SPEAKERS", x, currentY, pText)
-            currentY += dp(12f)
-            currentY = drawSpeakerRow(canvas, x, currentY, frontSpeakers)
-            currentY += dp(8f)
-        }
-
-        // Height Speakers
-        if (heightSpeakers.isNotEmpty()) {
-            pText.color = TEXT_DIM
-            pText.textSize = dp(7f)
-            pText.textAlign = Paint.Align.LEFT
-            canvas.drawText("HEIGHT SPEAKERS", x, currentY, pText)
-            currentY += dp(12f)
-            currentY = drawSpeakerRow(canvas, x, currentY, heightSpeakers)
-            currentY += dp(8f)
-        }
-
-        // Surround + Subs (compact, one line)
-        val others = surroundSpeakers + subs
-        if (others.isNotEmpty()) {
-            currentY = drawSpeakerRow(canvas, x, currentY, others)
-        }
-    }
-
-    private fun drawSpeakerRow(canvas: Canvas, startX: Float, y: Float, speakers: List<String>): Float {
-        var x = startX
-        val boxW = dp(24f)
-        val boxH = dp(16f)
-        val spacing = dp(6f)
-
-        speakers.forEach { code ->
-            // Draw speaker box
-            pSpeaker.color = ACCENT
-            rf.set(x, y, x + boxW, y + boxH)
-            canvas.drawRoundRect(rf, dp(3f), dp(3f), pSpeaker)
-
-            // Draw label
-            pText.color = TEXT
-            pText.textSize = dp(8f)
-            pText.textAlign = Paint.Align.CENTER
-            canvas.drawText(code, x + boxW / 2, y + dp(11f), pText)
-
-            x += boxW + spacing
-        }
-
-        return y + boxH + dp(4f)
-    }
+    // Speaker display removed for simplified design (focus on audioformat)
 }
