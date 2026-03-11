@@ -13,11 +13,15 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23667eea;stop-opacity:1" /><stop offset="100%" style="stop-color:%23764ba2;stop-opacity:1" /></linearGradient></defs><rect width="1920" height="1080" fill="url(%23g)"/></svg>') center/cover no-repeat;
+            background-attachment: fixed;
             color: #fff;
             min-height: 100vh;
             padding: 20px;
         }
+
+        /* Alternative backgrounds - uncomment to try */
+        /* body { background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"><rect width="1920" height="1080" fill="%23000"/><rect x="0" y="0" width="1920" height="1080" fill="url(%23pattern)"/><defs><pattern id="pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs></svg>') center/cover; } */
 
         .container {
             max-width: 1920px;
@@ -28,10 +32,9 @@
             text-align: center;
             margin-bottom: 10px;
             font-size: 2.5em;
-            background: linear-gradient(135deg, #4fc3f7 0%, #81d4fa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #fff;
+            font-weight: 700;
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
         }
 
         .subtitle {
@@ -41,10 +44,10 @@
         }
 
         .controls {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(40px) saturate(120%);
+            -webkit-backdrop-filter: blur(40px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 30px;
@@ -53,8 +56,8 @@
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
-                        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+                        0 0 0 0.5px rgba(255, 255, 255, 0.15) inset;
         }
 
         .control-group {
@@ -70,7 +73,7 @@
         }
 
         select, input[type="range"] {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.25);
@@ -80,18 +83,17 @@
             font-size: 1em;
             cursor: pointer;
             min-width: 150px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2),
-                        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+                        0 0 0 0.5px rgba(255, 255, 255, 0.15) inset;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         select:hover, select:focus {
-            background: rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.2);
             outline: none;
-            border-color: rgba(79, 195, 247, 0.6);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
-                        0 0 0 1px rgba(79, 195, 247, 0.4) inset,
-                        0 0 20px rgba(79, 195, 247, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(255, 255, 255, 0.3) inset;
         }
 
         select option {
@@ -176,7 +178,7 @@
 
         .stat-value {
             font-size: 1.1em;
-            color: #4fc3f7;
+            color: #fff;
             font-weight: 600;
         }
 
@@ -282,19 +284,19 @@
     </div>
 
     <script>
-        // Apple Glassmorphism Colors (upgraded from OSDView.kt)
+        // Apple tvOS Glassmorphism - Neutral Grey with High Contrast
         const COLORS = {
-            BG: 'rgba(20, 25, 35, 0.7)',           // Lighter, more transparent
-            BG_GLOW: 'rgba(79, 195, 247, 0.05)',   // Subtle blue glow
-            BORDER: 'rgba(255, 255, 255, 0.25)',   // Brighter border
-            BORDER_INNER: 'rgba(255, 255, 255, 0.1)', // Inner highlight
-            ACCENT: 'rgba(79, 195, 247, 0.6)',     // Brighter accent
-            TEXT: 'rgba(255, 255, 255, 0.95)',     // Slightly brighter text
-            TEXT_DIM: 'rgba(255, 255, 255, 0.6)',  // Brighter dim text
-            TEXT_MUTE: 'rgba(255, 96, 96, 0.9)',   // Brighter mute
-            BAR_BG: 'rgba(255, 255, 255, 0.15)',   // Brighter bar background
-            BAR_FILL: 'rgba(129, 212, 250, 0.8)',  // Brighter, more vibrant fill
-            SHADOW: 'rgba(0, 0, 0, 0.3)'           // Outer shadow
+            BG: 'rgba(30, 30, 35, 0.85)',              // Dark grey, more opaque for readability
+            BG_GLOW: 'rgba(255, 255, 255, 0.02)',      // Subtle white glow (not blue!)
+            BORDER: 'rgba(255, 255, 255, 0.3)',        // Clear white border
+            BORDER_INNER: 'rgba(255, 255, 255, 0.12)', // Subtle inner highlight
+            ACCENT: 'rgba(200, 200, 205, 0.5)',        // Neutral grey accent for speakers
+            TEXT: 'rgba(255, 255, 255, 1.0)',          // Full white for max readability
+            TEXT_DIM: 'rgba(255, 255, 255, 0.75)',     // Readable dim text
+            TEXT_MUTE: 'rgba(255, 100, 100, 1.0)',     // Bright red for mute
+            BAR_BG: 'rgba(255, 255, 255, 0.2)',        // Visible bar background
+            BAR_FILL: 'rgba(255, 255, 255, 0.85)',     // White bar fill (Apple style)
+            SHADOW: 'rgba(0, 0, 0, 0.5)'               // Stronger shadow for depth
         };
 
         const canvas = document.getElementById('osdCanvas');
@@ -366,19 +368,12 @@
 
             const pad = dp(12, scaleFactor);
 
-            // VOL/MUTE label with slight glow
+            // VOL/MUTE label - aligned with bar center
             ctx.fillStyle = muted ? COLORS.TEXT_MUTE : COLORS.TEXT_DIM;
-            ctx.font = `500 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.font = `600 ${dp(10, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-
-            if (muted) {
-                ctx.shadowColor = 'rgba(255, 96, 96, 0.5)';
-                ctx.shadowBlur = dp(4, scaleFactor);
-            }
-            ctx.fillText(muted ? 'MUTE' : 'VOL', x + pad, y + dp(5, scaleFactor));
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(muted ? 'MUTE' : 'VOL', x + pad, y + h / 2);
 
             // Volume bar
             const barX = x + pad + dp(38, scaleFactor);
@@ -393,36 +388,23 @@
             ctx.roundRect(barX, barY, barW, barH, barRadius);
             ctx.fill();
 
-            // Bar fill with gradient (glassmorphism)
+            // Bar fill - clean white (Apple style)
             const fillW = (barW * (volume / 98));
             if (fillW > 2) {
-                const gradient = ctx.createLinearGradient(barX, barY, barX + fillW, barY);
-                gradient.addColorStop(0, 'rgba(79, 195, 247, 0.9)');
-                gradient.addColorStop(1, 'rgba(129, 212, 250, 0.9)');
-                ctx.fillStyle = gradient;
+                ctx.fillStyle = COLORS.BAR_FILL;
                 ctx.beginPath();
                 ctx.roundRect(barX, barY, fillW, barH, barRadius);
                 ctx.fill();
-
-                // Subtle glow on bar
-                ctx.shadowColor = 'rgba(79, 195, 247, 0.4)';
-                ctx.shadowBlur = dp(6, scaleFactor);
-                ctx.fill();
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
             }
 
-            // Volume value with subtle glow
+            // Volume value - aligned with bar center
             ctx.fillStyle = COLORS.TEXT;
-            ctx.font = `600 ${dp(13, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.font = `700 ${dp(14, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'right';
-            ctx.shadowColor = 'rgba(255, 255, 255, 0.3)';
-            ctx.shadowBlur = dp(2, scaleFactor);
+            ctx.textBaseline = 'middle';
             const volValue = volume - 80; // Convert to dB
             const volString = volValue % 1 === 0 ? volValue.toString() : volValue.toFixed(1);
-            ctx.fillText(volString, x + w - pad, y + dp(9, scaleFactor));
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
+            ctx.fillText(volString, x + w - pad, y + h / 2);
         }
 
         function drawInfoOSD(displayMode, scaleFactor) {
@@ -472,19 +454,19 @@
             const pad = dp(12, scaleFactor);
             let currentY = y + dp(16, scaleFactor);
 
-            // Source + Sound Mode
-            ctx.fillStyle = hexToRgba(COLORS.TEXT);
-            ctx.font = `500 ${dp(11, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            // Source + Sound Mode - higher contrast
+            ctx.fillStyle = COLORS.TEXT;
+            ctx.font = `600 ${dp(12, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
             ctx.fillText('Fire TV • DOLBY ATMOS', x + pad, currentY);
-            currentY += dp(18, scaleFactor);
-
-            // Signal + Digital + Tech Info
-            ctx.fillStyle = hexToRgba(COLORS.TEXT_DIM);
-            ctx.font = `${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
-            ctx.fillText('HDMI • AUTO • DRC:AUTO', x + pad, currentY);
             currentY += dp(20, scaleFactor);
+
+            // Signal + Digital + Tech Info - better readability
+            ctx.fillStyle = COLORS.TEXT_DIM;
+            ctx.font = `500 ${dp(10, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            ctx.fillText('HDMI • AUTO • DRC:AUTO', x + pad, currentY);
+            currentY += dp(22, scaleFactor);
 
             // Compact speaker display (EXTENDED mode only)
             if (displayMode === 'EXTENDED') {
@@ -495,14 +477,15 @@
         function drawCompactSpeakers(x, y, maxWidth, scaleFactor) {
             let currentY = y;
 
-            // Front Speakers
-            ctx.fillStyle = hexToRgba(COLORS.TEXT_DIM);
-            ctx.font = `${dp(7, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+            // Front Speakers - better readability
+            ctx.fillStyle = COLORS.TEXT_DIM;
+            ctx.font = `600 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
             ctx.fillText('FRONT SPEAKERS', x, currentY);
-            currentY += dp(12, scaleFactor);
+            currentY += dp(14, scaleFactor);
             currentY = drawSpeakerRow(x, currentY, ['FL', 'C', 'FR'], scaleFactor);
-            currentY += dp(8, scaleFactor);
+            currentY += dp(10, scaleFactor);
 
             // Surround + Sub
             currentY = drawSpeakerRow(x, currentY, ['SL', 'SR', 'SW'], scaleFactor);
@@ -516,39 +499,23 @@
             const radius = dp(4, scaleFactor);
 
             speakers.forEach(code => {
-                // Speaker box with glassmorphism
-                // 1. Subtle shadow
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-                ctx.shadowBlur = dp(4, scaleFactor);
-                ctx.shadowOffsetY = dp(2, scaleFactor);
-
+                // Clean speaker box - Apple style (no heavy glows)
                 ctx.fillStyle = COLORS.ACCENT;
                 ctx.beginPath();
                 ctx.roundRect(x, y, boxW, boxH, radius);
                 ctx.fill();
 
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetY = 0;
-
-                // 2. Inner glow
+                // Subtle border
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.lineWidth = dp(0.5, scaleFactor);
-                ctx.beginPath();
-                ctx.roundRect(x + dp(1, scaleFactor), y + dp(1, scaleFactor),
-                             boxW - dp(2, scaleFactor), boxH - dp(2, scaleFactor), radius - dp(1, scaleFactor));
+                ctx.lineWidth = dp(1, scaleFactor);
                 ctx.stroke();
 
-                // 3. Label with subtle glow
+                // Clean white label
                 ctx.fillStyle = COLORS.TEXT;
-                ctx.font = `700 ${dp(8, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+                ctx.font = `700 ${dp(9, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.shadowColor = 'rgba(79, 195, 247, 0.5)';
-                ctx.shadowBlur = dp(3, scaleFactor);
                 ctx.fillText(code, x + boxW / 2, y + boxH / 2);
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
 
                 x += boxW + spacing;
             });
