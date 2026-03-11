@@ -117,93 +117,105 @@ Change the volume on your AVR — the OSD should appear instantly on your TV.
 
 ## Display Mode Examples
 
-**Split OSD Layout:**
-- **Volume Bar:** Always bottom-center, compact (200x36dp)
-- **Info Box:** Only in INFO/EXTENDED modes, top-left
-- No more giant overlays blocking your content!
+**Split OSD Layout - True to Scale:**
+All examples below show **MEDIUM scale (100%)** on a **1920×1080 Full HD TV**. Position and size are pixel-accurate based on actual code.
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for detailed visual examples and technical specifications.
 
+---
+
 ### STANDARD Mode
-Shows only volume bar at bottom-center:
+Shows only volume bar at bottom-center (200×36dp):
 
 ```
-╔══════════════════════════════════════════════╗  ← Your TV Screen
-║                                              ║
-║                                              ║
-║          🎮 Your Content Here 🎬             ║
-║                                              ║
-║                                              ║
-║        ╭─────────────────────╮               ║  ← Volume OSD
-║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
-║        ╰─────────────────────╯               ║  Glassy, compact
-╚══════════════════════════════════════════════╝
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ 1920px
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                          Your Content Here (1920×1080)                          ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                    ╭─────────────────────────────────╮                          ┃
+┃                    │ VOL  ▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱    45 │ ← 200×36dp @ 80dp from  ┃
+┃                    ╰─────────────────────────────────╯    bottom, centered     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ 1080px
 ```
 
-**Design:** Glassy semi-transparent box • Blue gradient volume bar • Minimal screen coverage (~2%)
+**Colors:** Semi-transparent dark background (#CC0A0F14) • Blue volume bar (#90B0D0F0) • White text (#E5FFFFFF)
 
 ---
 
 ### INFO Mode
-Adds info box at top-left with source and sound mode:
+Adds info box at top-left (280×70dp):
 
 ```
-╔══════════════════════════════════════════════╗  ← Your TV Screen
-║ ╭──────────────────╮                         ║  ← Info OSD
-║ │ GAME • DIRECT    │                         ║  (top-left)
-║ ╰──────────────────╯                         ║  Glassy box
-║                                              ║
-║          🎮 Your Content Here 🎬             ║
-║                                              ║
-║        ╭─────────────────────╮               ║  ← Volume OSD
-║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
-║        ╰─────────────────────╯               ║
-╚══════════════════════════════════════════════╝
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ╭────────────────────────────────────────╮                                     ┃
+┃ │ Fire TV • DIRECT                       │ ← 280×70dp @ 24dp from top-left     ┃
+┃ │ HDMI • AUTO                            │                                     ┃
+┃ ╰────────────────────────────────────────╯                                     ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                          Your Content Here                                      ┃
+┃                                                                                 ┃
+┃                                                                                 ┃
+┃                    ╭─────────────────────────────────╮                          ┃
+┃                    │ VOL  ▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱    45 │                          ┃
+┃                    ╰─────────────────────────────────╯                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ```
 
-**Info Shows:** Custom source name (e.g., "Fire TV") • Sound mode (e.g., DIRECT, STEREO)
+**Info Shows:** Custom source name (synced from receiver) • Sound mode • Signal/format info
 
 ---
 
 ### EXTENDED Mode
-Complete technical info with speaker layout in top-left box:
+Complete info with compact speaker layout (280×140dp):
 
 ```
-╔══════════════════════════════════════════════╗  ← Your TV Screen
-║ ╭────────────────────────────╮               ║  ← Info OSD
-║ │ GAME • DOLBY ATMOS         │               ║  (top-left)
-║ │ HDMI • AUTO • DRC:AUTO     │               ║  Detailed info
-║ │ ─────────────────────────  │               ║
-║ │     TFL      TFR           │               ║  Speaker Layout
-║ │   FL   C   FR              │               ║  ● = active
-║ │   SL   ○   SR              │               ║  ○ = listener
-║ │       SW                   │               ║  ○ = inactive
-║ ╰────────────────────────────╯               ║
-║                                              ║
-║          🎮 Your Content Here 🎬             ║
-║                                              ║
-║        ╭─────────────────────╮               ║  ← Volume OSD
-║        │ VOL ▰▰▰▰▰▱▱▱▱▱ 45  │               ║  (bottom-center)
-║        ╰─────────────────────╯               ║
-╚══════════════════════════════════════════════╝
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ ╭────────────────────────────────────────╮                                     ┃
+┃ │ Fire TV • DOLBY ATMOS                  │ ← 280×140dp @ 24dp from top-left    ┃
+┃ │ HDMI • AUTO • DRC:AUTO                 │                                     ┃
+┃ │                                        │                                     ┃
+┃ │ FRONT SPEAKERS                         │                                     ┃
+┃ │ ┌────┐ ┌────┐ ┌────┐                  │   Compact speaker boxes             ┃
+┃ │ │ FL │ │ C  │ │ FR │                  │   (grouped by position)             ┃
+┃ │ └────┘ └────┘ └────┘                  │                                     ┃
+┃ │ ┌────┐ ┌────┐ ┌────┐                  │                                     ┃
+┃ │ │ SL │ │ SR │ │ SW │                  │                                     ┃
+┃ │ └────┘ └────┘ └────┘                  │                                     ┃
+┃ ╰────────────────────────────────────────╯                                     ┃
+┃                                                                                 ┃
+┃                          Your Content Here                                      ┃
+┃                                                                                 ┃
+┃                    ╭─────────────────────────────────╮                          ┃
+┃                    │ VOL  ▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱    45 │                          ┃
+┃                    ╰─────────────────────────────────╯                          ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 ```
 
 **Extended Shows:**
 - **Full audio format names:** DOLBY ATMOS, DTS:X MSTR, DOLBY HD+DS (no abbreviations!)
-- **Speaker layout:** Visual overhead view showing active speakers (5.1, 7.1, Atmos, etc.)
+- **Compact speaker boxes:** Grouped by position (Front/Height/Surround) like Denon's original OSD
 - **Signal info:** HDMI, DIGITAL, ANALOG, ARC
-- **Technical details:** DRC, Audio Restorer, HDMI routing, ECO mode
-
-**Volume Bar Stays Bottom:** Even in EXTENDED mode, volume changes never obscure your content!
+- **Technical details:** DRC, Audio Restorer, HDMI routing (→TV), ECO mode
 
 ---
 
-**Key Features:**
-- 🪟 **Glassy Design:** Semi-transparent with backdrop blur effect
-- 📊 **Volume Bar:** Always bottom-center, never blocks content (200×36dp)
-- 📍 **Info Box:** Appears top-left only when needed
-- 🔊 **Speaker Layout:** Active speakers highlighted, inactive speakers dimmed
-- 🎵 **Full Format Names:** DOLBY ATMOS, DTS:X MSTR, etc. (no abbreviations!)
+**Scale Options:**
+- **SMALL (75%):** Volume: 150×27dp | Info: 210×52dp (INFO) / 210×105dp (EXTENDED)
+- **MEDIUM (100%):** Volume: 200×36dp | Info: 280×70dp (INFO) / 280×140dp (EXTENDED) ← shown above
+- **LARGE (130%):** Volume: 260×47dp | Info: 364×91dp (INFO) / 364×182dp (EXTENDED)
+
+**Actual Colors (from code):**
+- Background: `#CC0A0F14` (80% opaque dark blue-grey)
+- Border: `#18FFFFFF` (9% white)
+- Volume Bar Fill: `#90B0D0F0` (56% light blue)
+- Text: `#E5FFFFFF` (90% white)
+- Mute Text: `#D0FF6060` (82% red)
 
 ## How it Works
 
