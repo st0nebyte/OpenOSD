@@ -44,21 +44,45 @@ class OSDDisplayModeTest {
     @Test
     fun trigger_allValuesExist() {
         val triggers = OSDTrigger.values()
-        assertEquals(2, triggers.size)
+        assertEquals(4, triggers.size)
         assertTrue(triggers.contains(OSDTrigger.VOLUME))
         assertTrue(triggers.contains(OSDTrigger.MUTE))
+        assertTrue(triggers.contains(OSDTrigger.SOURCE))
+        assertTrue(triggers.contains(OSDTrigger.SOUND_MODE))
     }
 
     @Test
     fun trigger_valueOf_worksCorrectly() {
         assertEquals(OSDTrigger.VOLUME, OSDTrigger.valueOf("VOLUME"))
         assertEquals(OSDTrigger.MUTE, OSDTrigger.valueOf("MUTE"))
+        assertEquals(OSDTrigger.SOURCE, OSDTrigger.valueOf("SOURCE"))
+        assertEquals(OSDTrigger.SOUND_MODE, OSDTrigger.valueOf("SOUND_MODE"))
     }
 
     @Test
     fun trigger_hasTimeout() {
-        // Both triggers should have 3 second timeout
+        // Volume trigger has 3 second timeout
         assertEquals(3000L, OSDTrigger.VOLUME.timeoutMs)
-        assertEquals(3000L, OSDTrigger.MUTE.timeoutMs)
+        // Info triggers (mute, source, sound_mode) have 5 second timeout
+        assertEquals(5000L, OSDTrigger.MUTE.timeoutMs)
+        assertEquals(5000L, OSDTrigger.SOURCE.timeoutMs)
+        assertEquals(5000L, OSDTrigger.SOUND_MODE.timeoutMs)
+    }
+
+    @Test
+    fun trigger_hasCorrectFlags() {
+        // VOLUME shows only volume bar
+        assertTrue(OSDTrigger.VOLUME.showVolume)
+        assertFalse(OSDTrigger.VOLUME.showInfo)
+
+        // MUTE, SOURCE, SOUND_MODE show only info box
+        assertFalse(OSDTrigger.MUTE.showVolume)
+        assertTrue(OSDTrigger.MUTE.showInfo)
+
+        assertFalse(OSDTrigger.SOURCE.showVolume)
+        assertTrue(OSDTrigger.SOURCE.showInfo)
+
+        assertFalse(OSDTrigger.SOUND_MODE.showVolume)
+        assertTrue(OSDTrigger.SOUND_MODE.showInfo)
     }
 }
