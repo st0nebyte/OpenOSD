@@ -113,7 +113,6 @@ class OSDView(context: Context) : View(context) {
         pText.color = if (state.muted) TEXT_MUTE else TEXT_DIM
         pText.textSize = dp(9f)
         pText.textAlign = Paint.Align.LEFT
-        pText.textBaseline = Paint.Align.CENTER
         canvas.drawText(if (state.muted) "MUTE" else "VOL", x + pad, y + h / 2f + dp(3f), pText)
 
         // Volume bar
@@ -174,7 +173,6 @@ class OSDView(context: Context) : View(context) {
         // Info text: Show MUTE if muted, otherwise Source • Sound Mode
         pText.textSize = dp(11f)
         pText.textAlign = Paint.Align.LEFT
-        pText.textBaseline = Paint.Align.CENTER
 
         val infoText = if (state.muted) {
             pText.color = TEXT_MUTE  // Red for mute
