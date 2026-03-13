@@ -266,6 +266,38 @@
                     <input type="checkbox" id="muted"> Muted
                 </label>
             </div>
+
+            <div class="control-group">
+                <label for="source">Input Source</label>
+                <select id="source">
+                    <option value="Fire TV" selected>Fire TV</option>
+                    <option value="GAME">GAME</option>
+                    <option value="BLU-RAY">BLU-RAY</option>
+                    <option value="TV">TV</option>
+                    <option value="DVD">DVD</option>
+                    <option value="MEDIA PLAYER">MEDIA PLAYER</option>
+                    <option value="CD">CD</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="soundMode">Sound Mode</label>
+                <select id="soundMode">
+                    <option value="DOLBY ATMOS" selected>DOLBY ATMOS</option>
+                    <option value="DOLBY SURROUND">DOLBY SURROUND</option>
+                    <option value="DTS">DTS</option>
+                    <option value="STEREO">STEREO</option>
+                    <option value="DIRECT">DIRECT</option>
+                    <option value="MULTI CH IN">MULTI CH IN</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="info">
+            <div class="stat" style="margin-bottom: 15px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <div class="stat-label">Active Trigger</div>
+                <div class="stat-value" id="triggerStatus">—</div>
+            </div>
         </div>
 
         <div class="preview-container">
@@ -326,6 +358,28 @@
         const ctx = canvas.getContext('2d');
         const density = 2; // Simulate Android density (mdpi = 1, xhdpi = 2, etc.)
 
+        // Trigger simulation state
+        let prevVolume = 45;
+        let prevMuted = false;
+        let prevSource = 'Fire TV';
+        let prevSoundMode = 'DOLBY ATMOS';
+
+        let showVolumeOSD = false;
+        let showInfoOSD = false;
+        let volumeTimer = null;
+        let infoTimer = null;
+        let currentTrigger = null;
+        let remainingTime = 0;
+
+        // OSDTrigger constants (matching AVRState.kt)
+        const TRIGGERS = {
+            VOLUME:     { timeoutMs: 3000, showVolume: true,  showInfo: false, persistWhileMuted: false },
+            MUTE:       { timeoutMs: 0,    showVolume: true,  showInfo: true,  persistWhileMuted: true },
+            UNMUTE:     { timeoutMs: 350,  showVolume: false, showInfo: false, persistWhileMuted: false },
+            SOURCE:     { timeoutMs: 5000, showVolume: false, showInfo: true,  persistWhileMuted: false },
+            SOUND_MODE: { timeoutMs: 5000, showVolume: false, showInfo: true,  persistWhileMuted: false },
+        };
+
         // Controls
         const displayModeSelect = document.getElementById('displayMode');
         const scaleSelect = document.getElementById('scale');
@@ -334,6 +388,9 @@
         const volumeSlider = document.getElementById('volume');
         const volumeValueSpan = document.getElementById('volumeValue');
         const mutedCheckbox = document.getElementById('muted');
+        const sourceSelect = document.getElementById('source');
+        const soundModeSelect = document.getElementById('soundMode');
+        const triggerStatusSpan = document.getElementById('triggerStatus');
 
         // Background images
         const backgrounds = {
@@ -499,10 +556,175 @@
             ctx.font = `600 ${dp(11, scaleFactor)}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText('Fire TV • DOLBY ATMOS', x + dp(12, scaleFactor), y + blockHeight / 2);
+            const source = sourceSelect.value;
+            const soundMode = soundModeSelect.value;
+            ctx.fillText(`${source} • ${soundMode}`, x + dp(12, scaleFactor), y + blockHeight / 2);
         }
 
         // Speaker grid removed for simplified design (fokus auf Audioformat)
+
+        function detectTrigger(volume, muted, source, soundMode) {
+            // Priority order: mute/unmute > volume > source > sound_mode
+            if (prevMuted !== muted && muted) return 'MUTE';
+            if (prevMuted !== muted && !muted) return 'UNMUTE';
+            if (Math.abs(prevVolume - volume) > 0) return 'VOLUME';
+            if (prevSource !== source) return 'SOURCE';
+            if (prevSoundMode !== soundMode) return 'SOUND_MODE';
+            return null;
+        }
+
+        function handleTrigger(trigger, muted) {
+            if (!trigger) return;
+
+            currentTrigger = trigger;
+            const config = TRIGGERS[trigger];
+
+            // UNMUTE: fade out both elements
+            if (trigger === 'UNMUTE') {
+                hideAll();
+                updateTriggerStatus('UNMUTE (fade out)', 350);
+                setTimeout(() => {
+                    currentTrigger = null;
+                    updateTriggerStatus(null, 0);
+                }, 350);
+                return;
+            }
+
+            // Show appropriate OSD elements based on trigger
+            if (config.showVolume) {
+                showVolumeOSDFunc(config.timeoutMs, config.persistWhileMuted && muted, trigger);
+            }
+            if (config.showInfo) {
+                showInfoOSDFunc(config.timeoutMs, config.persistWhileMuted && muted, trigger);
+            }
+        }
+
+        function showVolumeOSDFunc(timeoutMs, persistWhileMuted, trigger) {
+            showVolumeOSD = true;
+
+            // Cancel previous timer
+            if (volumeTimer) {
+                clearTimeout(volumeTimer);
+                volumeTimer = null;
+            }
+
+            // If persistWhileMuted, don't set a timer (stays visible until unmute)
+            if (!persistWhileMuted && timeoutMs > 0) {
+                const startTime = Date.now();
+                updateTriggerStatus(trigger, timeoutMs);
+
+                volumeTimer = setTimeout(() => {
+                    showVolumeOSD = false;
+                    fadeOutIfBothHidden();
+                    volumeTimer = null;
+                }, timeoutMs);
+
+                // Update countdown
+                updateCountdown(trigger, startTime, timeoutMs);
+            } else if (persistWhileMuted) {
+                updateTriggerStatus(trigger + ' (persistent)', 0);
+            }
+
+            render();
+        }
+
+        function showInfoOSDFunc(timeoutMs, persistWhileMuted, trigger) {
+            showInfoOSD = true;
+
+            // Cancel previous timer
+            if (infoTimer) {
+                clearTimeout(infoTimer);
+                infoTimer = null;
+            }
+
+            // If persistWhileMuted, don't set a timer (stays visible until unmute)
+            if (!persistWhileMuted && timeoutMs > 0) {
+                const startTime = Date.now();
+                updateTriggerStatus(trigger, timeoutMs);
+
+                infoTimer = setTimeout(() => {
+                    showInfoOSD = false;
+                    fadeOutIfBothHidden();
+                    infoTimer = null;
+                }, timeoutMs);
+
+                // Update countdown
+                updateCountdown(trigger, startTime, timeoutMs);
+            } else if (persistWhileMuted) {
+                updateTriggerStatus(trigger + ' (persistent)', 0);
+            }
+
+            render();
+        }
+
+        function fadeOutIfBothHidden() {
+            if (!showVolumeOSD && !showInfoOSD) {
+                currentTrigger = null;
+                updateTriggerStatus(null, 0);
+            }
+            render();
+        }
+
+        function hideAll() {
+            if (volumeTimer) {
+                clearTimeout(volumeTimer);
+                volumeTimer = null;
+            }
+            if (infoTimer) {
+                clearTimeout(infoTimer);
+                infoTimer = null;
+            }
+            showVolumeOSD = false;
+            showInfoOSD = false;
+            render();
+        }
+
+        function updateTriggerStatus(trigger, timeoutMs) {
+            if (!trigger) {
+                triggerStatusSpan.textContent = '—';
+                return;
+            }
+
+            if (timeoutMs === 0) {
+                triggerStatusSpan.textContent = trigger;
+            } else {
+                triggerStatusSpan.textContent = `${trigger} (${(timeoutMs / 1000).toFixed(1)}s)`;
+            }
+        }
+
+        function updateCountdown(trigger, startTime, totalTimeMs) {
+            const update = () => {
+                const elapsed = Date.now() - startTime;
+                const remaining = totalTimeMs - elapsed;
+
+                if (remaining > 0) {
+                    updateTriggerStatus(trigger, remaining);
+                    requestAnimationFrame(update);
+                }
+            };
+            requestAnimationFrame(update);
+        }
+
+        function onStateChange() {
+            const volume = parseInt(volumeSlider.value);
+            const muted = mutedCheckbox.checked;
+            const source = sourceSelect.value;
+            const soundMode = soundModeSelect.value;
+
+            const trigger = detectTrigger(volume, muted, source, soundMode);
+
+            if (trigger) {
+                handleTrigger(trigger, muted);
+            }
+
+            // Update previous state
+            prevVolume = volume;
+            prevMuted = muted;
+            prevSource = source;
+            prevSoundMode = soundMode;
+
+            render();
+        }
 
         function render() {
             const displayMode = displayModeSelect.value;
@@ -518,11 +740,13 @@
             // Draw background based on selection
             drawBackground(backgroundType);
 
-            // Always draw volume OSD
-            drawVolumeOSD(scaleFactor, volume, muted, volumeDisplayMode);
+            // Draw volume OSD if triggered
+            if (showVolumeOSD) {
+                drawVolumeOSD(scaleFactor, volume, muted, volumeDisplayMode);
+            }
 
-            // Draw info OSD if INFO or EXTENDED mode
-            if (displayMode === 'INFO' || displayMode === 'EXTENDED') {
+            // Draw info OSD if triggered AND in INFO/EXTENDED mode
+            if (showInfoOSD && (displayMode === 'INFO' || displayMode === 'EXTENDED')) {
                 drawInfoOSD(displayMode, scaleFactor);
             }
 
@@ -627,12 +851,21 @@
         backgroundSelect.addEventListener('change', render);
         volumeSlider.addEventListener('input', () => {
             volumeValueSpan.textContent = volumeSlider.value;
-            render();
+            onStateChange();
         });
-        mutedCheckbox.addEventListener('change', render);
+        mutedCheckbox.addEventListener('change', onStateChange);
+        sourceSelect.addEventListener('change', onStateChange);
+        soundModeSelect.addEventListener('change', onStateChange);
 
-        // Initial render
+        // Initial render (show volume on page load to demonstrate)
+        showVolumeOSD = true;
+        showInfoOSD = true;
         render();
+        setTimeout(() => {
+            showVolumeOSD = false;
+            showInfoOSD = false;
+            render();
+        }, 2000);
     </script>
 </body>
 </html>
