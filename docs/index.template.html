@@ -346,18 +346,7 @@
     <script>
         // Apple tvOS Glassmorphism - Neutral Grey with High Contrast
         // Auto-generated from OSDView.kt - DO NOT EDIT MANUALLY
-        const COLORS = {
-            BG           : 'rgba(30, 30, 35, 0.70)',
-            BG_GLOW      : 'rgba(255, 255, 255, 0.02)',
-            BORDER       : 'rgba(255, 255, 255, 0.30)',
-            BORDER_INNER : 'rgba(255, 255, 255, 0.12)',
-            ACCENT       : 'rgba(200, 200, 205, 0.50)',
-            TEXT         : 'rgba(255, 255, 255, 1.00)',
-            TEXT_DIM     : 'rgba(255, 255, 255, 0.75)',
-            TEXT_MUTE    : 'rgba(255, 100, 100, 1.00)',
-            BAR_BG       : 'rgba(255, 255, 255, 0.20)',
-            BAR_FILL     : 'rgba(255, 255, 255, 0.85)',
-        };
+        {{COLORS_JS}}
 
         const canvas = document.getElementById('osdCanvas');
         const ctx = canvas.getContext('2d');
@@ -377,13 +366,7 @@
         let remainingTime = 0;
 
         // OSDTrigger constants - Auto-generated from AVRState.kt - DO NOT EDIT MANUALLY
-        const TRIGGERS = {
-            VOLUME      : { timeoutMs: 3000, showVolume: true , showInfo: false, persistWhileMuted: false },
-            MUTE        : { timeoutMs:    0, showVolume: true , showInfo: true , persistWhileMuted: true  },
-            UNMUTE      : { timeoutMs:  350, showVolume: false, showInfo: false, persistWhileMuted: false },
-            SOURCE      : { timeoutMs: 5000, showVolume: false, showInfo: true , persistWhileMuted: false },
-            SOUND_MODE  : { timeoutMs: 5000, showVolume: false, showInfo: true , persistWhileMuted: false },
-        };
+        {{TRIGGERS_JS}}
 
         // Controls
         const displayModeSelect = document.getElementById('displayMode');
