@@ -44,9 +44,10 @@ class OSDDisplayModeTest {
     @Test
     fun trigger_allValuesExist() {
         val triggers = OSDTrigger.values()
-        assertEquals(4, triggers.size)
+        assertEquals(5, triggers.size)
         assertTrue(triggers.contains(OSDTrigger.VOLUME))
         assertTrue(triggers.contains(OSDTrigger.MUTE))
+        assertTrue(triggers.contains(OSDTrigger.UNMUTE))
         assertTrue(triggers.contains(OSDTrigger.SOURCE))
         assertTrue(triggers.contains(OSDTrigger.SOUND_MODE))
     }
@@ -55,6 +56,7 @@ class OSDDisplayModeTest {
     fun trigger_valueOf_worksCorrectly() {
         assertEquals(OSDTrigger.VOLUME, OSDTrigger.valueOf("VOLUME"))
         assertEquals(OSDTrigger.MUTE, OSDTrigger.valueOf("MUTE"))
+        assertEquals(OSDTrigger.UNMUTE, OSDTrigger.valueOf("UNMUTE"))
         assertEquals(OSDTrigger.SOURCE, OSDTrigger.valueOf("SOURCE"))
         assertEquals(OSDTrigger.SOUND_MODE, OSDTrigger.valueOf("SOUND_MODE"))
     }
@@ -63,8 +65,11 @@ class OSDDisplayModeTest {
     fun trigger_hasTimeout() {
         // Volume trigger has 3 second timeout
         assertEquals(3000L, OSDTrigger.VOLUME.timeoutMs)
-        // Info triggers (mute, source, sound_mode) have 5 second timeout
-        assertEquals(5000L, OSDTrigger.MUTE.timeoutMs)
+        // MUTE has no timeout (0ms, persists while muted)
+        assertEquals(0L, OSDTrigger.MUTE.timeoutMs)
+        // UNMUTE triggers fade-out
+        assertEquals(350L, OSDTrigger.UNMUTE.timeoutMs)
+        // Info triggers (source, sound_mode) have 5 second timeout
         assertEquals(5000L, OSDTrigger.SOURCE.timeoutMs)
         assertEquals(5000L, OSDTrigger.SOUND_MODE.timeoutMs)
     }
@@ -75,10 +80,16 @@ class OSDDisplayModeTest {
         assertTrue(OSDTrigger.VOLUME.showVolume)
         assertFalse(OSDTrigger.VOLUME.showInfo)
 
-        // MUTE, SOURCE, SOUND_MODE show only info box
-        assertFalse(OSDTrigger.MUTE.showVolume)
+        // MUTE shows both elements, persists while muted
+        assertTrue(OSDTrigger.MUTE.showVolume)
         assertTrue(OSDTrigger.MUTE.showInfo)
+        assertTrue(OSDTrigger.MUTE.persistWhileMuted)
 
+        // UNMUTE hides both
+        assertFalse(OSDTrigger.UNMUTE.showVolume)
+        assertFalse(OSDTrigger.UNMUTE.showInfo)
+
+        // SOURCE and SOUND_MODE show only info box
         assertFalse(OSDTrigger.SOURCE.showVolume)
         assertTrue(OSDTrigger.SOURCE.showInfo)
 

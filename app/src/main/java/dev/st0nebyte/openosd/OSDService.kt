@@ -89,18 +89,24 @@ class OSDService : Service() {
     override fun onBind(i: Intent?) = null
 
     private fun onUpdate(state: AVRState, trigger: OSDTrigger) {
-        Log.d(TAG, "onUpdate trigger=$trigger power=${state.power} vol=${state.volumeDb}")
+        Log.d(TAG, "onUpdate trigger=$trigger power=${state.power} vol=${state.volumeDb} muted=${state.muted}")
         if (!state.power) { hideAll(); return }
 
         osd.state = state
         osd.animateVolume(state.volumeNorm)
 
+        // Handle UNMUTE: fade out both elements
+        if (trigger == OSDTrigger.UNMUTE) {
+            hideAll()
+            return
+        }
+
         // Show appropriate OSD based on trigger
         if (trigger.showVolume) {
-            showVolumeOSD(trigger.timeoutMs)
+            showVolumeOSD(trigger.timeoutMs, persistWhileMuted = trigger.persistWhileMuted && state.muted)
         }
         if (trigger.showInfo) {
-            showInfoOSD(trigger.timeoutMs)
+            showInfoOSD(trigger.timeoutMs, persistWhileMuted = trigger.persistWhileMuted && state.muted)
         }
     }
 
@@ -110,7 +116,7 @@ class OSDService : Service() {
         notify(if (connected) "Verbunden ✓ ($protocol)" else "Verbinde…")
     }
 
-    private fun showVolumeOSD(timeoutMs: Long) {
+    private fun showVolumeOSD(timeoutMs: Long, persistWhileMuted: Boolean = false) {
         if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
         updateDisplayMode()
         ensureAttached()
@@ -120,17 +126,21 @@ class OSDService : Service() {
         osd.visibility = View.VISIBLE
         osd.invalidate()
 
-        // Cancel previous volume timer, start new one
+        // Cancel previous volume timer
         volumeHideTimer?.let { handler.removeCallbacks(it) }
-        val r = Runnable {
-            osd.showVolumeOSD = false
-            fadeOutIfBothHidden()
+
+        // If persistWhileMuted, don't set a timer (stays visible until unmute)
+        if (!persistWhileMuted && timeoutMs > 0) {
+            val r = Runnable {
+                osd.showVolumeOSD = false
+                fadeOutIfBothHidden()
+            }
+            volumeHideTimer = r
+            handler.postDelayed(r, timeoutMs)
         }
-        volumeHideTimer = r
-        handler.postDelayed(r, timeoutMs)
     }
 
-    private fun showInfoOSD(timeoutMs: Long) {
+    private fun showInfoOSD(timeoutMs: Long, persistWhileMuted: Boolean = false) {
         if (!Settings.canDrawOverlays(this)) { toast("Overlay-Berechtigung fehlt!"); return }
         updateDisplayMode()
         ensureAttached()
@@ -140,14 +150,18 @@ class OSDService : Service() {
         osd.visibility = View.VISIBLE
         osd.invalidate()
 
-        // Cancel previous info timer, start new one
+        // Cancel previous info timer
         infoHideTimer?.let { handler.removeCallbacks(it) }
-        val r = Runnable {
-            osd.showInfoOSD = false
-            fadeOutIfBothHidden()
+
+        // If persistWhileMuted, don't set a timer (stays visible until unmute)
+        if (!persistWhileMuted && timeoutMs > 0) {
+            val r = Runnable {
+                osd.showInfoOSD = false
+                fadeOutIfBothHidden()
+            }
+            infoHideTimer = r
+            handler.postDelayed(r, timeoutMs)
         }
-        infoHideTimer = r
-        handler.postDelayed(r, timeoutMs)
     }
 
     private fun ensureAttached() {

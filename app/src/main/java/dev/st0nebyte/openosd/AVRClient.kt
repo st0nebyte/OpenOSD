@@ -105,18 +105,19 @@ class AVRClient(
 
         if (next == old) return
 
-        // Determine trigger (priority order: mute > volume > source > mode)
+        // Determine trigger (priority order: mute/unmute > volume > source > mode)
         val trigger = when {
             !old.power && next.power                       -> OSDTrigger.VOLUME
-            old.muted != next.muted                        -> OSDTrigger.MUTE
+            old.muted != next.muted && next.muted          -> OSDTrigger.MUTE    // Muted
+            old.muted != next.muted && !next.muted         -> OSDTrigger.UNMUTE  // Unmuted
             Math.abs(old.volumeDb - next.volumeDb) > 0.1   -> OSDTrigger.VOLUME
             old.inputSource != next.inputSource            -> OSDTrigger.SOURCE
             old.soundMode != next.soundMode                -> OSDTrigger.SOUND_MODE
             else                                           -> return  // No relevant change
         }
 
-        // Enable turbo mode for volume/mute changes only
-        if (trigger == OSDTrigger.VOLUME || trigger == OSDTrigger.MUTE) {
+        // Enable turbo mode for volume/mute/unmute changes only
+        if (trigger == OSDTrigger.VOLUME || trigger == OSDTrigger.MUTE || trigger == OSDTrigger.UNMUTE) {
             turboCountdown = TURBO_DURATION
         }
 

@@ -36,11 +36,12 @@ data class AVRState(
         }
 }
 
-enum class OSDTrigger(val timeoutMs: Long, val showVolume: Boolean, val showInfo: Boolean) {
-    VOLUME     (timeoutMs = 3_000, showVolume = true,  showInfo = false),  // Only volume bar
-    MUTE       (timeoutMs = 5_000, showVolume = false, showInfo = true),   // Only info box (shows MUTE)
-    SOURCE     (timeoutMs = 5_000, showVolume = false, showInfo = true),   // Only info box (source changed)
-    SOUND_MODE (timeoutMs = 5_000, showVolume = false, showInfo = true),   // Only info box (mode changed)
+enum class OSDTrigger(val timeoutMs: Long, val showVolume: Boolean, val showInfo: Boolean, val persistWhileMuted: Boolean = false) {
+    VOLUME     (timeoutMs = 3_000, showVolume = true,  showInfo = false),   // Only volume bar
+    MUTE       (timeoutMs = 0,     showVolume = true,  showInfo = true,  persistWhileMuted = true),  // Both elements, no timeout while muted
+    UNMUTE     (timeoutMs = 350,   showVolume = false, showInfo = false),   // Trigger fade-out
+    SOURCE     (timeoutMs = 5_000, showVolume = false, showInfo = true),    // Only info box (source changed)
+    SOUND_MODE (timeoutMs = 5_000, showVolume = false, showInfo = true),    // Only info box (mode changed)
 }
 
 enum class OSDDisplayMode {

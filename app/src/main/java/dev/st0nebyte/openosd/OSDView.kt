@@ -170,20 +170,15 @@ class OSDView(context: Context) : View(context) {
         rf.set(x + dp(1f), y + dp(1f), x + w - dp(1f), y + h - dp(1f))
         canvas.drawRoundRect(rf, radius - dp(1f), radius - dp(1f), pBorder)
 
-        // Info text: Show MUTE if muted, otherwise Source • Sound Mode
+        // Info text: Source • Sound Mode (always normal text, even when muted)
+        pText.color = TEXT
         pText.textSize = dp(11f)
         pText.textAlign = Paint.Align.LEFT
 
-        val infoText = if (state.muted) {
-            pText.color = TEXT_MUTE  // Red for mute
-            "MUTE"
-        } else {
-            pText.color = TEXT
-            buildString {
-                state.inputSource?.let { append(it) }
-                if (state.inputSource != null && state.soundMode != null) append(" • ")
-                state.soundMode?.let { append(it) }
-            }
+        val infoText = buildString {
+            state.inputSource?.let { append(it) }
+            if (state.inputSource != null && state.soundMode != null) append(" • ")
+            state.soundMode?.let { append(it) }
         }
 
         if (infoText.isNotBlank()) {
