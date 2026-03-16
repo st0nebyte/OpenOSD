@@ -142,6 +142,9 @@ class AVRClientTelnet(
     }
 
     private fun queryInitialState() {
+        // Clear speaker list from previous connection
+        activeSpeakers.clear()
+
         // Query current state on connect
         sendCommand("PW?")        // Power
         sendCommand("MV?")        // Master Volume

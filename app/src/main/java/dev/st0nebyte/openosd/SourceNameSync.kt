@@ -32,9 +32,10 @@ object SourceNameSync {
         host: String,
         onComplete: ((Boolean, Int) -> Unit)? = null
     ) = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
         try {
             val url = URL("http://$host/SETUP/INPUTS/INPUTASSIGN/d_InputAssign.asp")
-            val connection = url.openConnection() as HttpURLConnection
+            connection = url.openConnection() as HttpURLConnection
             connection.connectTimeout = 3000
             connection.readTimeout = 3000
             connection.requestMethod = "GET"
@@ -69,6 +70,8 @@ object SourceNameSync {
         } catch (e: Exception) {
             Log.e(TAG, "Sync failed: ${e.message}")
             onComplete?.invoke(false, 0)
+        } finally {
+            connection?.disconnect()
         }
     }
 

@@ -64,20 +64,179 @@ The app will automatically detect that Telnet is now available and switch from H
 ## 📡 Protocol Details
 
 ### Commands Sent to AVR (Telnet Mode)
+
+Based on official Denon AVR-X1200W protocol specification and verified responses.
+
+#### Main Zone Commands
+
+| Command | Purpose | Example Response | Notes |
+|---------|---------|------------------|-------|
+| **Power & Volume** |||
+| `PW?` | Query power status | `PWON` | Also: `PWSTANDBY` |
+| `MV?` | Query master volume | `MV445MVMAX 74` | Returns 2 values: current (44.5) + max (74) |
+| `MVUP` | Volume up | `MV80` | Increases by 0.5 dB |
+| `MVDOWN` | Volume down | `MV80` | Decreases by 0.5 dB |
+| `MV**` | Set volume directly | `MV50` | Range: 00-98 (80 = 0dB) |
+| `MU?` | Query mute status | `MUOFF` | Also: `MUON` |
+| `MUON` | Mute on | `MUON` | |
+| `MUOFF` | Mute off | `MUOFF` | |
+| **Input Source** |||
+| `SI?` | Query input source | `SIMPLAYSVOFF` | Returns source + video status |
+| `SICD` | Select CD | `SICD` | |
+| `SITUNER` | Select Tuner | `SITUNER` | |
+| `SIDVD` | Select DVD | `SIDVD` | X1200: DVD/Blu-ray |
+| `SIBD` | Select Blu-ray | `SIBD` | |
+| `SITV` | Select TV Audio | `SITV` | |
+| `SISAT/CBL` | Select SAT/CBL | `SISAT/CBL` | |
+| `SIMPLAY` | Select Media Player | `SIMPLAY` | |
+| `SIGAME` | Select Game | `SIGAME` | |
+| `SINET` | Select Online Music | `SINET` | |
+| `SIAUX1` | Select AUX1 | `SIAUX1` | |
+| `SIBT` | Select Bluetooth | `SIBT` | |
+| `SIUSB` | Select USB | `SIUSB` | |
+| **Sound Mode** |||
+| `MS?` | Query sound mode | `MSSTEREOPSDRC OFF...` | Returns mode + many audio settings! |
+| `MSMOVIE` | Movie mode | `MSMOVIE` | |
+| `MSMUSIC` | Music mode | `MSMUSIC` | |
+| `MSGAME` | Game mode | `MSGAME` | |
+| `MSDIRECT` | Direct mode | `MSDIRECT` | Pure audio path |
+| `MSSTEREO` | Stereo mode | `MSSTEREO` | |
+| `MSDOLBY ATMOS` | Dolby Atmos | `MSDOLBY ATMOS` | |
+| `MSDTS:X MSTR` | DTS:X Master | `MSDTS:X MSTR` | |
+| **Signal & Processing** |||
+| `SD?` | Query signal detection | `SDHDMI` | Also: `SDDIGITAL`, `SDANALOG`, `SDARC`, `SDNO` |
+| `DC?` | Query digital mode | `DCAUTO` | Also: `DCPCM`, `DCDTS` |
+| `DCAUTO` | Digital input auto | `DCAUTO` | |
+| `DCPCM` | Force PCM | `DCPCM` | |
+| `DCDTS` | Force DTS | `DCDTS` | |
+| **Channel Volume** |||
+| `CV?` | Query all channel volumes | `CVFL 50CVFR 50...CVEND` | Lists all active speakers, ends with CVEND |
+| `CVFL UP` | Front Left up | `CVFL 50` | |
+| `CVFL DOWN` | Front Left down | `CVFL 50` | |
+| `CVFL **` | Front Left direct set | `CVFL 50` | Range: 38-62 (50 = 0dB) |
+| `CVFR UP/DOWN/**` | Front Right | `CVFR 50` | Same range as FL |
+| `CVC UP/DOWN/**` | Center | `CVC 50` | Same range |
+| `CVSW UP/DOWN/**` | Subwoofer | `CVSW 50` | Range: 00,38-62 (00=OFF) |
+| `CVSL UP/DOWN/**` | Surround Left | `CVSL 50` | |
+| `CVSR UP/DOWN/**` | Surround Right | `CVSR 50` | |
+| `CVSB UP/DOWN/**` | Surround Back | `CVSB 50` | 1 speaker config |
+| `CVSBL UP/DOWN/**` | Surround Back Left | `CVSBL 50` | 2 speaker config |
+| `CVSBR UP/DOWN/**` | Surround Back Right | `CVSBR 50` | 2 speaker config |
+| **Audio Settings** |||
+| `PSDRC ?` | Query Dynamic Range Compression | `PSDRC OFF` | |
+| `PSDRC AUTO` | DRC Auto | `PSDRC AUTO` | |
+| `PSDRC OFF` | DRC Off | `PSDRC OFF` | |
+| `PSDRC LOW/MID/HI` | DRC levels | `PSDRC LOW` | |
+| `PSRSTR ?` | Query Audio Restorer | `PSRSTR MED` | |
+| `PSRSTR OFF` | Restorer off | `PSRSTR OFF` | |
+| `PSRSTR LOW/MED/HI` | Restorer levels | `PSRSTR MED` | |
+| `PSTONE CTRL ?` | Query Tone Control | `PSTONE CTRL ON` | |
+| `PSBAS ?` | Query Bass | `PSBAS 50` | Range: 44-56 (50 = 0dB, ±6dB) |
+| `PSBAS UP/DOWN/**` | Bass adjust | `PSBAS 50` | |
+| `PSTRE ?` | Query Treble | `PSTRE 50` | Range: 44-56 (50 = 0dB, ±6dB) |
+| `PSTRE UP/DOWN/**` | Treble adjust | `PSTRE 50` | |
+| `PSLFE ?` | Query LFE level | `PSLFE 10` | Range: 00-10 (00=0dB, 10=-10dB) |
+| `PSLFE UP/DOWN/**` | LFE adjust | `PSLFE 10` | |
+| **Audyssey** |||
+| `PSMULTEQ ?` | Query MultEQ | `PSMULTEQ AUDYSSEY` | |
+| `PSMULTEQ AUDYSSEY` | MultEQ Reference | `PSMULTEQ AUDYSSEY` | |
+| `PSMULTEQ BYP.LR` | L/R Bypass | `PSMULTEQ BYP.LR` | |
+| `PSMULTEQ FLAT` | Flat | `PSMULTEQ FLAT` | |
+| `PSMULTEQ OFF` | MultEQ Off | `PSMULTEQ OFF` | |
+| `PSDYNEQ ?` | Query Dynamic EQ | `PSDYNEQ ON` | |
+| `PSDYNVOL ?` | Query Dynamic Volume | `PSDYNVOL OFF` | Also: `HEV`, `MED`, `LIT` |
+| **Video** |||
+| `VSAUDIO ?` | Query HDMI Audio Output | `VSAUDIO AMP` | Also: `VSAUDIO TV` |
+| `VSAUDIO AMP` | Audio to AMP | `VSAUDIO AMP` | |
+| `VSAUDIO TV` | Audio to TV | `VSAUDIO TV` | |
+| **System** |||
+| `ECO?` | Query ECO mode | `ECOAUTO` | |
+| `ECOON` | ECO On | `ECOON` | |
+| `ECOAUTO` | ECO Auto | `ECOAUTO` | |
+| `ECOOFF` | ECO Off | `ECOOFF` | |
+| `SLP?` | Query sleep timer | `SLPOFF` | Also: `SLP120` (120 min) |
+| `SLPOFF` | Sleep timer off | `SLPOFF` | |
+| `SLP***` | Set sleep timer | `SLP120` | Range: 001-120 minutes |
+| `ZM?` | Query main zone status | `ZMON` | Also: `ZMOFF` |
+
+**Command Format:**
+- All commands end with `\r` (CR, 0x0D)
+- No line feed needed
+- Responses may be concatenated without delimiters
+- Wait 50ms between commands (per spec)
+
+### Real AVR Responses (Verified on AVR-X1200W)
+
+**Note:** Responses are concatenated without delimiters - multiple responses can arrive together!
+
+```bash
+# Power Query
+$ printf "PW?\r" | nc -w 2 192.168.178.130 23
+PWON
+
+# Volume Query (returns current volume AND max volume)
+$ printf "MV?\r" | nc -w 2 192.168.178.130 23
+MV445MVMAX 74
+# MV445 = 44.5 (3 digits = decimal), MVMAX 74 = max volume 74
+
+# Mute Query
+$ printf "MU?\r" | nc -w 2 192.168.178.130 23
+MUOFF
+
+# Input Source Query (returns source AND other status)
+$ printf "SI?\r" | nc -w 2 192.168.178.130 23
+SIMPLAYSVOFF
+# SIMPLAY = Media Player, SVOFF = Source Video Off
+
+# Sound Mode Query (returns mode AND audio settings!)
+$ printf "MS?\r" | nc -w 2 192.168.178.130 23
+MSSTEREOPSDRC OFFPSLFE 00PSBAS 50PSTRE 50PSTONE CTRL ON
+# MSSTEREO = Stereo mode
+# PSDRC OFF = Dynamic Range Compression Off
+# PSLFE 00 = LFE level
+# PSBAS 50 = Bass 50
+# PSTRE 50 = Treble 50
+# PSTONE CTRL ON = Tone Control enabled
+
+# Signal Detection Query
+$ printf "SD?\r" | nc -w 2 192.168.178.130 23
+SDHDMI
+
+# Digital Mode Query
+$ printf "DC?\r" | nc -w 2 192.168.178.130 23
+DCAUTO
+
+# Channel Volume Query (returns ALL active speakers!)
+$ printf "CV?\r" | nc -w 2 192.168.178.130 23
+CVFL 50CVFR 50CVSW 50CVENDMVMAX 74DCAUTO
+# CVFL 50 = Front Left 50
+# CVFR 50 = Front Right 50
+# CVSW 50 = Subwoofer 50
+# CVEND = End of channel list
+# + bonus responses: MVMAX 74, DCAUTO
+
+# Dynamic Range Compression Query
+$ printf "PSDRC ?\r" | nc -w 2 192.168.178.130 23
+PSDRC OFF
+
+# Audio Restorer Query
+$ printf "PSRSTR ?\r" | nc -w 2 192.168.178.130 23
+PSRSTR MED
+
+# HDMI Audio Output Query
+$ printf "VSAUDIO ?\r" | nc -w 2 192.168.178.130 23
+VSAUDIO AMP
+
+# ECO Mode Query
+$ printf "ECO?\r" | nc -w 2 192.168.178.130 23
+ECOAUTO
 ```
-PW?          → Query power status
-MV?          → Query master volume
-MU?          → Query mute status
-SI?          → Query input source
-MS?          → Query sound mode
-SD?          → Query signal detection
-DC?          → Query digital mode
-CV?          → Query channel volume (active speakers)
-PSDRC ?      → Query Dynamic Range Compression
-PSRSTR ?     → Query Audio Restorer
-VSAUDIO ?    → Query HDMI Audio Output
-ECO?         → Query ECO mode
-```
+
+**Important Findings:**
+- ⚠️ **Multiple responses per query:** Many queries return extra status info (e.g., `MV?` returns both `MV445` and `MVMAX 74`)
+- ⚠️ **No delimiters:** Responses are concatenated directly (e.g., `SIMPLAYSVOFF` = two responses!)
+- ⚠️ **3-digit volume = decimal:** `MV445` means 44.5, `MV50` means 50.0
+- ⚠️ **Bonus data:** Some queries trigger unrelated responses (e.g., `CV?` also returns `MVMAX` and `DCAUTO`)
 
 ### Push Updates from AVR (Telnet Mode)
 The AVR sends **unsolicited updates** when state changes:
@@ -94,8 +253,9 @@ MSDOLBY ATMOS     → Sound mode changed to Dolby Atmos
 
 ### Response Format
 - All commands/responses end with `\r` (carriage return)
-- No delimiters between messages (streaming)
+- **No delimiters between messages** - responses are concatenated!
 - Commands and responses use same format
+- Parser must handle multi-response concatenation
 
 ## 🔄 How Auto-Detection Works
 
@@ -107,6 +267,35 @@ MSDOLBY ATMOS     → Sound mode changed to Dolby Atmos
 
 The switch happens automatically and transparently. You'll see a toast message:
 - "Port 23 gesperrt - nutze HTTP (langsamer)" if Telnet failed
+
+## 🧪 Testing Your AVR's Telnet Responses
+
+Want to see exactly what your AVR responds? Use these commands:
+
+```bash
+# Basic test - check if Telnet is open
+nc -zv YOUR_AVR_IP 23
+
+# Test individual commands
+printf "PW?\r" | nc -w 2 YOUR_AVR_IP 23    # Power status
+printf "MV?\r" | nc -w 2 YOUR_AVR_IP 23    # Volume + Max Volume
+printf "SI?\r" | nc -w 2 YOUR_AVR_IP 23    # Input source
+printf "MS?\r" | nc -w 2 YOUR_AVR_IP 23    # Sound mode + audio settings
+printf "CV?\r" | nc -w 2 YOUR_AVR_IP 23    # All active speakers
+
+# Interactive Telnet session (type commands manually)
+nc YOUR_AVR_IP 23
+# Then type: PW? [Enter]
+# Then type: MV? [Enter]
+# etc. (Ctrl+C to exit)
+```
+
+**Tip:** Pipe output to `cat -v` to see hidden characters:
+```bash
+printf "MV?\r" | nc -w 2 YOUR_AVR_IP 23 | cat -v
+# Shows: MV445^MMVMAX 74^M
+# The ^M is carriage return (\r)
+```
 
 ## 🐛 Debugging
 

@@ -18,11 +18,13 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
 
-    private val lifecycleScope = CoroutineScope(Dispatchers.Main)
+    private val lifecycleJob = Job()
+    private val lifecycleScope = CoroutineScope(Dispatchers.Main + lifecycleJob)
 
     private lateinit var etHost:        EditText
     private lateinit var spDisplayMode: Spinner
@@ -251,6 +253,11 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         updateStatus()
+    }
+
+    override fun onDestroy() {
+        lifecycleJob.cancel()  // Cancel all coroutines to prevent memory leaks
+        super.onDestroy()
     }
 
     private fun updateStatus() {

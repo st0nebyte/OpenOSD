@@ -29,6 +29,7 @@ class OSDService : Service() {
     // Separate timers for volume and info OSD
     private var volumeHideTimer: Runnable? = null
     private var infoHideTimer: Runnable? = null
+    private var fallbackTimer: Runnable? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -73,19 +74,29 @@ class OSDService : Service() {
         client = AVRClientTelnet(host, this, ::onUpdate, ::onConnected).also { it.start() }
 
         // After 5 seconds, check if Telnet connected - if not, fallback to HTTP
-        handler.postDelayed({
+        fallbackTimer?.let { handler.removeCallbacks(it) }
+        val r = Runnable {
             if (!isClientConnected && client is AVRClientTelnet) {
                 Log.i(TAG, "Telnet failed (Port 23 blocked), switching to HTTP fallback...")
                 toast("Port 23 gesperrt - nutze HTTP (langsamer)")
                 client?.stop()
                 client = AVRClient(host, ::onUpdate, ::onConnected).also { it.start() }
             }
-        }, 5000)
+            fallbackTimer = null
+        }
+        fallbackTimer = r
+        handler.postDelayed(r, 5000)
 
         return START_STICKY
     }
 
-    override fun onDestroy() { client?.stop(); detachOverlay(); super.onDestroy() }
+    override fun onDestroy() {
+        hideAll()  // Cancel all timers before destroying
+        fallbackTimer?.let { handler.removeCallbacks(it) }
+        client?.stop()
+        detachOverlay()
+        super.onDestroy()
+    }
     override fun onBind(i: Intent?) = null
 
     private fun onUpdate(state: AVRState, trigger: OSDTrigger) {
@@ -129,14 +140,17 @@ class OSDService : Service() {
         // Cancel previous volume timer
         volumeHideTimer?.let { handler.removeCallbacks(it) }
 
-        // If persistWhileMuted, don't set a timer (stays visible until unmute)
-        if (!persistWhileMuted && timeoutMs > 0) {
+        // If persistWhileMuted, use a long timeout (30s) instead of infinite
+        // This prevents OSD from getting stuck if mute status becomes out of sync
+        val actualTimeout = if (persistWhileMuted) 30_000L else timeoutMs
+
+        if (actualTimeout > 0) {
             val r = Runnable {
                 osd.showVolumeOSD = false
                 fadeOutIfBothHidden()
             }
             volumeHideTimer = r
-            handler.postDelayed(r, timeoutMs)
+            handler.postDelayed(r, actualTimeout)
         }
     }
 
@@ -153,14 +167,17 @@ class OSDService : Service() {
         // Cancel previous info timer
         infoHideTimer?.let { handler.removeCallbacks(it) }
 
-        // If persistWhileMuted, don't set a timer (stays visible until unmute)
-        if (!persistWhileMuted && timeoutMs > 0) {
+        // If persistWhileMuted, use a long timeout (30s) instead of infinite
+        // This prevents OSD from getting stuck if mute status becomes out of sync
+        val actualTimeout = if (persistWhileMuted) 30_000L else timeoutMs
+
+        if (actualTimeout > 0) {
             val r = Runnable {
                 osd.showInfoOSD = false
                 fadeOutIfBothHidden()
             }
             infoHideTimer = r
-            handler.postDelayed(r, timeoutMs)
+            handler.postDelayed(r, actualTimeout)
         }
     }
 

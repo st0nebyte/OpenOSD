@@ -57,6 +57,7 @@ class OSDView(context: Context) : View(context) {
 
     fun animateVolume(target: Float) {
         volAnim?.cancel()
+        volAnim = null
         volAnim = ValueAnimator.ofFloat(animVol, target).apply {
             duration = 120
             interpolator = DecelerateInterpolator()
