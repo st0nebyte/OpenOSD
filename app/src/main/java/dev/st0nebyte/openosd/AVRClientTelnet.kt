@@ -220,23 +220,25 @@ class AVRClientTelnet(
             }
 
             // Sound Mode: MSSTEREO, MSDIRECT, MSDOLBY SURROUND, etc.
-            // Keep full format names (no abbreviations)
+            // Format for better readability (expand abbreviations)
             response.startsWith("MS") -> {
                 val mode = response.substring(2).trim()
-                next = next.copy(soundMode = mode)
+                val formatted = AudioFormatMapper.formatSoundMode(mode)
+                next = next.copy(soundMode = formatted)
             }
 
             // Signal Detection: SDHDMI, SDDIGITAL, SDANALOG, SDARC, SDNO
             response.startsWith("SD") -> {
                 val signal = response.substring(2).trim()
-                    .replace("NO", "—")  // No signal
-                next = next.copy(signalDetect = signal)
+                val formatted = AudioFormatMapper.formatSignalDetect(signal)
+                next = next.copy(signalDetect = formatted)
             }
 
             // Digital Mode: DCAUTO, DCPCM, DCDTS
             response.startsWith("DC") -> {
                 val digital = response.substring(2).trim()
-                next = next.copy(digitalMode = digital)
+                val formatted = AudioFormatMapper.formatDigitalMode(digital)
+                next = next.copy(digitalMode = formatted)
             }
 
             // Channel Volume: CV** responses until CVEND

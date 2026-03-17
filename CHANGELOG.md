@@ -2,6 +2,29 @@
 
 All notable changes to OpenOSD will be documented in this file.
 
+## [0.8.0] - 2026-03-16
+
+### ✨ New Features
+- Audio format names now displayed in full
+  - Decoder names expanded (e.g., "Dolby Digital Plus" instead of "DOLBY D+")
+  - Upmixer names expanded (e.g., "Neural:X", "Dolby Surround")
+  - Example: "DOLBY D+ +DS" → "Dolby Digital Plus + Dolby Surround"
+
+### 🎯 Supported Audio Formats
+- **Dolby:** Atmos, TrueHD, Digital Plus, Digital, Surround
+- **DTS:** DTS:X Master, DTS-HD Master Audio, DTS-ES Matrix/Discrete, DTS 96/24
+- **Upmixers:** Neural:X, Dolby Surround
+- **Multi-Channel:** 7.1, Stereo, Multi-Channel In
+- **Sound Fields:** Rock Arena, Jazz Club, Video Game, Mono Movie, Matrix, Virtual
+
+### ✅ Testing
+- Added AudioFormatMapper with comprehensive unit tests
+- 11 new test cases covering all audio format mappings
+
+### 📦 Build
+- Version code: 12
+- Version name: 0.8.0
+
 ## [0.7.0] - 2026-03-16
 
 ### 🐛 Bug Fixes
