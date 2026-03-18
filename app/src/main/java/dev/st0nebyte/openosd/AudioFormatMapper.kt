@@ -13,63 +13,82 @@ object AudioFormatMapper {
      * - "DOLBY D+ +DS" → "Dolby Digital Plus + Dolby Surround"
      * - "DTS+NEURAL:X" → "DTS + Neural:X"
      * - "STEREO" → "Stereo"
+     *
+     * Implementation: Uses a map sorted by key length (longest first) to ensure
+     * specific patterns are matched before general ones (e.g., "DOLBY D+ +DS" before "DOLBY D+").
+     * This prevents order-dependent bugs when adding new formats.
      */
     fun formatSoundMode(mode: String?): String? {
         if (mode == null) return null
 
-        // Apply replacements in order (most specific first)
-        var formatted = mode
+        // Work with non-null string from here
+        var formatted: String = mode
 
-        // Dolby formats
-        formatted = formatted.replace("DOLBY ATMOS", "Dolby Atmos")
-        formatted = formatted.replace("DOLBY D+ +DS", "Dolby Digital Plus + Dolby Surround")
-        formatted = formatted.replace("DOLBY D++DS", "Dolby Digital Plus + Dolby Surround")
-        formatted = formatted.replace("DOLBY D+ +NEURAL:X", "Dolby Digital Plus + Neural:X")
-        formatted = formatted.replace("DOLBY D+DS", "Dolby Digital + Dolby Surround")
-        formatted = formatted.replace("DOLBY D+", "Dolby Digital Plus")
-        formatted = formatted.replace("DOLBY HD+DS", "Dolby TrueHD + Dolby Surround")
-        formatted = formatted.replace("DOLBY HD", "Dolby TrueHD")
-        formatted = formatted.replace("DOLBY DIGITAL", "Dolby Digital")
-        formatted = formatted.replace("DOLBY SURROUND", "Dolby Surround")
+        // Map of format codes to display names
+        // Automatically sorted by key length (longest first) to match specific patterns first
+        val formatMap = mapOf(
+            // Dolby formats (most specific first)
+            "DOLBY D+ +DS" to "Dolby Digital Plus + Dolby Surround",
+            "DOLBY D++DS" to "Dolby Digital Plus + Dolby Surround",
+            "DOLBY D+ +NEURAL:X" to "Dolby Digital Plus + Neural:X",
+            "DOLBY HD+DS" to "Dolby TrueHD + Dolby Surround",
+            "DOLBY ATMOS" to "Dolby Atmos",
+            "DOLBY D+DS" to "Dolby Digital + Dolby Surround",
+            "DOLBY DIGITAL" to "Dolby Digital",
+            "DOLBY SURROUND" to "Dolby Surround",
+            "DOLBY D+" to "Dolby Digital Plus",
+            "DOLBY HD" to "Dolby TrueHD",
 
-        // DTS formats
-        formatted = formatted.replace("DTS:X MSTR", "DTS:X Master")
-        formatted = formatted.replace("DTS:X", "DTS:X")
-        formatted = formatted.replace("DTS HD MSTR", "DTS-HD Master Audio")
-        formatted = formatted.replace("DTS HD+NEURAL:X", "DTS-HD + Neural:X")
-        formatted = formatted.replace("DTS HD", "DTS-HD High Resolution")
-        formatted = formatted.replace("DTS+NEURAL:X", "DTS + Neural:X")
-        formatted = formatted.replace("DTS ES MTRX6.1", "DTS-ES Matrix 6.1")
-        formatted = formatted.replace("DTS ES DSCRT6.1", "DTS-ES Discrete 6.1")
-        formatted = formatted.replace("DTS ES MTRX+NEURAL:X", "DTS-ES Matrix + Neural:X")
-        formatted = formatted.replace("DTS ES DSCRT+NEURAL:X", "DTS-ES Discrete + Neural:X")
-        formatted = formatted.replace("DTS 96/24", "DTS 96/24")
-        formatted = formatted.replace("DTS EXPRESS", "DTS Express")
-        formatted = formatted.replace("DTS SURROUND", "DTS Surround")
+            // DTS formats (most specific first)
+            "DTS ES MTRX+NEURAL:X" to "DTS-ES Matrix + Neural:X",
+            "DTS ES DSCRT+NEURAL:X" to "DTS-ES Discrete + Neural:X",
+            "DTS HD+NEURAL:X" to "DTS-HD + Neural:X",
+            "DTS ES 8CH DSCRT" to "DTS-ES 8CH Discrete",
+            "DTS ES MTRX6.1" to "DTS-ES Matrix 6.1",
+            "DTS ES DSCRT6.1" to "DTS-ES Discrete 6.1",
+            "DTS96 ES MTRX" to "DTS 96 ES Matrix",
+            "DTS HD MSTR" to "DTS-HD Master Audio",
+            "DTS:X MSTR" to "DTS:X Master",
+            "DTS+NEURAL:X" to "DTS + Neural:X",
+            "DTS EXPRESS" to "DTS Express",
+            "DTS SURROUND" to "DTS Surround",
+            "DTS96/24" to "DTS 96/24",
+            "DTS 96/24" to "DTS 96/24",
+            "DTS:X" to "DTS:X",
+            "DTS HD" to "DTS-HD High Resolution",
 
-        // Multi-channel
-        formatted = formatted.replace("M CH IN+NEURAL:X", "Multi-Channel In + Neural:X")
-        formatted = formatted.replace("M CH IN+DS", "Multi-Channel In + Dolby Surround")
-        formatted = formatted.replace("MULTI CH IN 7.1", "Multi-Channel In 7.1")
-        formatted = formatted.replace("MULTI CH IN", "Multi-Channel In")
-        formatted = formatted.replace("MCH STEREO", "Multi-Channel Stereo")
+            // Multi-channel (most specific first)
+            "M CH IN+NEURAL:X" to "Multi-Channel In + Neural:X",
+            "M CH IN+DS" to "Multi-Channel In + Dolby Surround",
+            "MULTI CH IN 7.1" to "Multi-Channel In 7.1",
+            "MULTI CH IN" to "Multi-Channel In",
+            "MCH STEREO" to "Multi-Channel Stereo",
 
-        // Sound field modes (must be before simple modes!)
-        formatted = formatted.replace("ROCK ARENA", "Rock Arena")
-        formatted = formatted.replace("JAZZ CLUB", "Jazz Club")
-        formatted = formatted.replace("MONO MOVIE", "Mono Movie")
-        formatted = formatted.replace("VIDEO GAME", "Video Game")
-        formatted = formatted.replace("MATRIX", "Matrix")
-        formatted = formatted.replace("VIRTUAL", "Virtual")
+            // Sound field modes (must be before simple modes!)
+            "ROCK ARENA" to "Rock Arena",
+            "JAZZ CLUB" to "Jazz Club",
+            "MONO MOVIE" to "Mono Movie",
+            "VIDEO GAME" to "Video Game",
+            "MATRIX" to "Matrix",
+            "VIRTUAL" to "Virtual",
 
-        // Simple modes
-        formatted = formatted.replace("NEURAL:X", "Neural:X")
-        formatted = formatted.replace("STEREO", "Stereo")
-        formatted = formatted.replace("DIRECT", "Direct")
-        formatted = formatted.replace("MOVIE", "Movie")
-        formatted = formatted.replace("MUSIC", "Music")
-        formatted = formatted.replace("GAME", "Game")
-        formatted = formatted.replace("AUTO", "Auto")
+            // Simple modes (shortest, last priority)
+            "NEURAL:X" to "Neural:X",
+            "STEREO" to "Stereo",
+            "DIRECT" to "Direct",
+            "MOVIE" to "Movie",
+            "MUSIC" to "Music",
+            "GAME" to "Game",
+            "AUTO" to "Auto",
+        )
+
+        // Sort by key length (longest first) to match specific patterns before general ones
+        val sortedFormats = formatMap.entries.sortedByDescending { it.key.length }
+
+        // Apply replacements in order (longest matches first)
+        for ((pattern, replacement) in sortedFormats) {
+            formatted = formatted.replace(pattern, replacement)
+        }
 
         return formatted
     }

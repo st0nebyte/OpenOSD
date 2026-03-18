@@ -2,6 +2,29 @@
 
 All notable changes to OpenOSD will be documented in this file.
 
+## [0.9.0] - 2026-03-18
+
+### ✨ Improvements
+- Refactored AudioFormatMapper for better maintainability
+  - Changed from sequential string replacements to map-based approach
+  - Automatic sorting by pattern length prevents order-dependent bugs
+  - Easier to add new audio formats in the future
+  - No functional changes - all existing formats still work identically
+
+### 🐛 Bug Fixes
+- Added 3 missing audio format mappings:
+  - `DTS96 ES MTRX` → "DTS 96 ES Matrix"
+  - `DTS ES 8CH DSCRT` → "DTS-ES 8CH Discrete"
+  - `DTS96/24` → "DTS 96/24" (without space variant)
+
+### ✅ Testing
+- All existing unit tests pass
+- AudioFormatMapper test suite expanded to cover new formats
+
+### 📦 Build
+- Version code: 13
+- Version name: 0.9.0
+
 ## [0.8.0] - 2026-03-16
 
 ### ✨ New Features
